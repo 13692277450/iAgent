@@ -43,9 +43,9 @@ export default function Chat() {
         // 使用浏览器原生的剪贴板 API
         await navigator.clipboard.writeText(textContent);
         // 这里可以做一个简单的反馈，比如弹一个窗，或者 console.log
-        console.log("已复制到剪贴板: ", textContent);
+        console.log("Already copied to clipboard: ", textContent);
       } catch (err) {
-        console.error("复制失败: ", err);
+        console.error("Copy failed to clipboard: ", err);
       }
     }
   };

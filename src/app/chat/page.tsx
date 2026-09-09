@@ -5,8 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Space } from "antd";
+import { Calendar } from "@/components/ui/calendar";
+import { useState } from "react";
 
 export default function Layout() {
+  const [date, setDate] = useState<Date | undefined>(new Date());
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
       {/* 1. 顶部横条：高度占整体的 10% */}
@@ -33,6 +37,26 @@ export default function Layout() {
             </CardHeader>
             <CardContent className="text-sm text-slate-500">
               Conversation History
+              <div className="mt-4 space-y-2">
+                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                  <div
+                    key={item}
+                    className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white shadow-none border-none">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold text-blue-600">
+                SKILLS CENTER
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-slate-500">
+              SKILLS LIST
               <div className="mt-4 space-y-2">
                 {["项目 1", "项目 2", "项目 3"].map((item) => (
                   <div
@@ -78,6 +102,26 @@ export default function Layout() {
               </div>
             </CardContent>
           </Card>
+          <Card className="bg-white shadow-none border-none">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold text-blue-600">
+                SYSTEM CENTER
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-slate-500">
+              SYSTEM INFORMATION
+              <div className="mt-4 space-y-2">
+                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                  <div
+                    key={item}
+                    className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 中间竖条 (4份) - 核心内容区 */}
@@ -94,7 +138,28 @@ export default function Layout() {
         </div>
 
         {/* 右侧竖条 (3份) */}
-        <div className="w-[27%] min-w-0 overflow-y-auto bg-slate-50 border-l border-slate-200 p-4">
+        <div className="w-[27%] min-w-0 overflow-y-auto bg-slate-50 border-l border-slate-200 p-4 space-y-2">
+          <Card className="bg-white shadow-none border-none">
+            <CardHeader>
+              <CardTitle className="text-lg">TOKEN INFORMATION</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-slate-500">
+              Token Usage Total: 12345
+              <div className="mt-4 p-3 bg-blue-50 rounded-md text-blue-700">
+                📊{" "}
+                <div className=" overflow-visible">
+                  {" "}
+                  {/* 1.6倍宽，允许溢出 */}
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="w-full rounded-lg border" // 宽度自适应父容器
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-lg">右侧面板</CardTitle>
