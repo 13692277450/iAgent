@@ -24,3 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 隐藏滚动条但保留滚动功能 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* 隐藏全局滚动条，但保留滚动功能 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* 兼容 Firefox 等 */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
