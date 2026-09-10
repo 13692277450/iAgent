@@ -14,7 +14,7 @@ export default function Layout() {
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
       {/* 1. 顶部横条：高度占整体的 10% */}
-      <div className="w-full h-[10%] bg-slate-900 text-cyan-300 flex items-center px-6 border-b border-slate-700">
+      <div className="w-full h-[5%] bg-slate-900 text-cyan-300 flex items-center px-6 border-b border-slate-700">
         <h1 className="text-xl font-bold">🦚 iAgent</h1>
         <div className="ml-auto">
           <Button variant="outline" className="text-blue-500 border-slate-600">
@@ -38,7 +38,7 @@ export default function Layout() {
             <CardContent className="text-sm text-slate-500">
               Conversation History
               <div className="mt-4 space-y-2">
-                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                {["Item 1", "Item 2", "Item 3"].map((item) => (
                   <div
                     key={item}
                     className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
@@ -58,7 +58,7 @@ export default function Layout() {
             <CardContent className="text-sm text-slate-500">
               SKILLS LIST
               <div className="mt-4 space-y-2">
-                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                {["Item 1", "Item 2", "Item 3"].map((item) => (
                   <div
                     key={item}
                     className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
@@ -78,7 +78,7 @@ export default function Layout() {
             <CardContent className="text-sm text-slate-500 text-green-600">
               ONLINE SERVERS
               <div className="mt-4 space-y-2">
-                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                {["Item 1", "Item 2", "Item 3"].map((item) => (
                   <div
                     key={item}
                     className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
@@ -91,7 +91,7 @@ export default function Layout() {
             <CardContent className="text-sm text-slate-500 text-red-600">
               OFFLINE SERVERS
               <div className="mt-4 space-y-2">
-                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                {["Item 1", "Item 2", "Item 3"].map((item) => (
                   <div
                     key={item}
                     className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
@@ -111,7 +111,7 @@ export default function Layout() {
             <CardContent className="text-sm text-slate-500">
               SYSTEM INFORMATION
               <div className="mt-4 space-y-2">
-                {["项目 1", "项目 2", "项目 3"].map((item) => (
+                {["Item 1", "Item 2", "Item 3"].map((item) => (
                   <div
                     key={item}
                     className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
@@ -162,12 +162,12 @@ export default function Layout() {
           </Card>
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
-              <CardTitle className="text-lg">右侧面板</CardTitle>
+              <CardTitle className="text-lg">LOG PANEL</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-500">
-              右侧信息展示区。
+              RUNNING LOGS
               <div className="mt-4 p-3 bg-blue-50 rounded-md text-blue-700">
-                📊 统计信息 / 通知
+                📊 LOGS...
               </div>
             </CardContent>
           </Card>
