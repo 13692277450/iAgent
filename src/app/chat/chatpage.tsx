@@ -323,21 +323,21 @@ export default function Chat() {
                 type="button"
                 className="h-8 px-3 text-xs text-cyan-300 bg-cyan-500/20"
               >
-                <Code2 className="w-3.5 h-3.5 inline mr-1" /> 代码
+                <Code2 className="w-3.5 h-3.5 inline mr-1" /> CODE
               </button>
               <div className="w-px h-4 bg-cyan-400/30" />
               <button
                 type="button"
                 className="h-8 px-3 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
               >
-                <PenLine className="w-3.5 h-3.5 inline mr-1" /> 协助
+                <PenLine className="w-3.5 h-3.5 inline mr-1" /> ASSIST
               </button>
               <div className="w-px h-4 bg-cyan-400/30" />
               <button
                 type="button"
                 className="h-8 px-3 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
               >
-                <Puzzle className="w-3.5 h-3.5 inline mr-1" /> 写作
+                <Puzzle className="w-3.5 h-3.5 inline mr-1" /> WRITE
               </button>
             </div>
 
@@ -384,7 +384,7 @@ export default function Chat() {
             className="h-8 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-semibold shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] transition-all"
           >
             <Send className="w-4 h-4 mr-1.5" />
-            发送
+            SEND
           </Button>
         </div>
       </form>

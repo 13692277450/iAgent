@@ -37,4 +37,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Design in progress
 
-![alt text](image.png)
+![alt text](image-1.png)
