@@ -16,19 +16,77 @@ import {
   Puzzle,
   Download,
   Copy,
+  Code,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DefaultChatTransport } from "ai";
 export default function Chat() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat();
+  const [model, setModel] = useState("deepseek-v4-flash");
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const lastMessage = messages[messages.length - 1];
   const [deepThink, setDeepThink] = useState(false);
+  const modelList = [
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+    "deepseek-reasoning",
+    "kimi-k3",
+    "qwen3.7-max",
+  ];
+  const [selectedModel, setSelectedModel] = useState<{
+    id: number;
+    name: string;
+    apiKey: string;
+    baseUrl: string;
+    model: string;
+  } | null>(null);
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      // 🚨 在这里把 deepThink 作为 body 的一部分传给后端
+      body: {
+        deepThink,
+        apiKey: selectedModel?.apiKey,
+        baseUrl: selectedModel?.baseUrl,
+        model: selectedModel?.model,
+      },
+    }),
+  });
+  const lastMessage = messages[messages.length - 1];
+  const [models, setModels] = useState<
+    {
+      id: number;
+      name: string;
+      apiKey: string;
+      baseUrl: string;
+      model: string;
+    }[]
+  >([]);
+
+  // 页面加载时拉取模型列表
+  useEffect(() => {
+    fetch("/api/llm")
+      .then((res) => res.json())
+      .then((data) => {
+        setModels(data.models);
+        if (data.models.length > 0) setSelectedModel(data.models[0]);
+      })
+      .catch((err) => console.error("Failed to fetch models", err));
+  }, []);
+
   useEffect(() => {
     const el = messagesScrollRef.current;
-    if (el) {
+    if (el && messages.length > 0) {
       el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
@@ -93,6 +151,23 @@ export default function Chat() {
 
               {message.parts.map((part, i) => {
                 switch (part.type) {
+                  case "reasoning": {
+                    return (
+                      <div
+                        key={`${message.id}-${i}`}
+                        className="w-full max-w-3xl my-2"
+                      >
+                        <details className="rounded-lg border border-gray-800/30 bg-black-750/20 backdrop-blur-md overflow-hidden">
+                          <summary className="px-3 py-2 text-xs text-blue-600 cursor-pointer hover:bg-purple-500/10 transition-colors">
+                            💬 AI DeepThinking
+                          </summary>
+                          <div className="p-3 text-sm text-black-600/80 whitespace-pre-wrap leading-relaxed border-t border-purple-400/20">
+                            {part.text}
+                          </div>
+                        </details>
+                      </div>
+                    );
+                  }
                   case "tool-render_output": {
                     const content = (part.input as any)?.content ?? "";
                     const language = (part.input as any)?.language ?? "text";
@@ -250,8 +325,10 @@ export default function Chat() {
                   }
 
                   case "tool-weather": {
-                    const location = part.input?.location;
-                    const temperature = part.output?.temperature;
+                    const input = part.input as { location?: string };
+                    const output = part.output as { temperature?: number };
+                    const location = input?.location;
+                    const temperature = output?.temperature;
                     return (
                       <div key={`${message.id}-${i}`}>
                         <div className="font-bold text-cyan-400">
@@ -323,7 +400,7 @@ export default function Chat() {
                 type="button"
                 className="h-8 px-3 text-xs text-cyan-300 bg-cyan-500/20"
               >
-                <Code2 className="w-3.5 h-3.5 inline mr-1" /> CODE
+                <Code className="w-3.5 h-3.5 inline mr-1" /> CODE
               </button>
               <div className="w-px h-4 bg-cyan-400/30" />
               <button
@@ -351,13 +428,13 @@ export default function Chat() {
             </Button>
 
             {/* 4. 粘贴图片 */}
-            <Button
+            {/* <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-cyan-600 hover:bg-cyan-500/10 rounded-lg border border-transparent hover:border-cyan-300/40"
             >
               <ImageIcon className="w-4 h-4" />
-            </Button>
+            </Button> */}
 
             {/* 5. 语音 */}
             <Button
@@ -376,6 +453,98 @@ export default function Chat() {
             >
               <Globe className="w-4 h-4" />
             </Button>
+            {/* 7. 模型选择下拉菜单 */}
+            {/* 7. 模型选择下拉菜单 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all"
+                >
+                  <Cpu className="w-4 h-4 mr-1.5" />
+                  {model}
+                  <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="start"
+                className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md"
+              >
+                {/* 🚨 关键修复：用 DropdownMenuGroup 包裹 Label 和 Items */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-xs text-cyan-400">
+                    SELECT MODEL
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator className="bg-cyan-400/20" />
+
+                {/* 🚨 修复：用 onClick 替代 onSelect，避免焦点丢失 */}
+                <DropdownMenuItem
+                  onClick={() => setModel("deepseek-v4-flash")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "deepseek-v4-flash"
+                      ? "bg-cyan-500/10 text-cyan-300"
+                      : ""
+                  }`}
+                >
+                  🚀 deepseek-v4-flash
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => setModel("deepseek-v4-pro")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "deepseek-v4-pro"
+                      ? "bg-cyan-500/10 text-cyan-300"
+                      : ""
+                  }`}
+                >
+                  🧠 deepseek-v4-pro
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => setModel("deepseek-chat")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "deepseek-chat"
+                      ? "bg-cyan-500/10 text-cyan-300"
+                      : ""
+                  }`}
+                >
+                  💬 deepseek-chat
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => setModel("deepseek-reasoner")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "deepseek-reasoner"
+                      ? "bg-cyan-500/10 text-cyan-300"
+                      : ""
+                  }`}
+                >
+                  🔍 deepseek-reasoner
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setModel("qwen3.7-flash")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "qwen3.7-flash"
+                      ? "bg-cyan-500/10 text-cyan-300"
+                      : ""
+                  }`}
+                >
+                  🔍 qwen3.7-flash
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setModel("kimi-k3")}
+                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                    model === "kimi-k3" ? "bg-cyan-500/10 text-cyan-300" : ""
+                  }`}
+                >
+                  🔍 kimi-k3
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* 右侧发送按钮 */}

@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^3.0.39",
     "@ai-sdk/openai": "^4.0.60",
+    "@ai-sdk/openai-compatible": "^3.0.47",
     "@ai-sdk/react": "^4.0.96",
     "@ant-design/icons": "^6.3.4",
     "@base-ui/react": "^1.8.0",
@@ -21,6 +22,7 @@
     "date-fns": "^4.4.0",
     "lucide-react": "^1.43.0",
     "next": "16.3.4",
+    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.8",
@@ -32,6 +34,7 @@
     "@biomejs/biome": "^2.5.12",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",

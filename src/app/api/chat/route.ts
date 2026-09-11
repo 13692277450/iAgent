@@ -10,19 +10,33 @@ import {
 
 } from 'ai';
 import { z } from 'zod';
-import { deepThink } from '@/app/chat/chatpage';
 
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
-  const deepseek = createDeepSeek({
-    apiKey: process.env.DEEPSEEK_API_KEY,
-    
+  const { messages, deepThink, model, apiKey, baseUrl }: { messages: UIMessage[]; deepThink: boolean; model: string; apiKey: string; baseUrl: string  } = await req.json();
+  
+// 提交时把 deepThink 作为第二个参数传进去
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  sendMessage(
+    { text: input },
+    { body: { deepThink } }  // 🚨 每次发送时动态传入
+  );
+  setInput("");
+};
+  const modelName = createDeepSeek({
+    apiKey: process.env.ALI_API_KEY,//DEEPSEEK_API_KEY,
+    // apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: process.env.ALI_OpenAI,
+
+    // baseURL: baseUrl,
   });
   const result = streamText({
-    model: deepseek("deepseek-v4-flash"),
+    // model: modelName(model),
+    // model: modelName("deepseek-v4-flash"),
+    model: modelName("qwen3.7-flash"),
     providerOptions: {
-      deepseek: {
+      modelName: {
         thinking: {
           type: deepThink ? 'enabled' : 'disabled',
         }
