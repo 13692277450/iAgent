@@ -19,6 +19,7 @@ import {
   Download,
   Copy,
   Code,
+  BookAIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,7 +82,7 @@ export default function Chat() {
 
   // 页面加载时拉取 system prompt 列表
   useEffect(() => {
-    fetch("/api/system_prompt")
+    fetch("/api/system_prompts")
       .then((res) => res.json())
       .then((data) => {
         setSystemPrompts(data.system_prompts); // ✅ 用 data.system_prompts
@@ -472,7 +473,7 @@ export default function Chat() {
             {/* 2. Agent 模式选择 */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
-                <Cpu className="w-4 h-4 mr-1.5" />
+                <BookAIcon className="w-4 h-4 mr-1.5" />
                 {selectedSystemPrompt?.system_prompt_name ?? "System Prompt"}
                 <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
               </DropdownMenuTrigger>
@@ -501,7 +502,7 @@ export default function Chat() {
                         : "No Name"
                     }`}
                   >
-                    🚀 {sp.system_prompt_content}
+                    📜 {sp.system_prompt_name}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
