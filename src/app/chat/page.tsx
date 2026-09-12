@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import Chat from "./chatpage";
 import Layout from "./pageLayout";
 
 export default async function ChatPage() {

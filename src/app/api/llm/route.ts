@@ -7,8 +7,10 @@ export async function GET() {
     return NextResponse.json({
       models: rows.map((row) => ({
         id: row.id,
-        name: row.llm_name,
-        model: row.llm_model,
+        llm_name: row.llm_name,
+        llm_apiKey: row.llm_apikey,
+        llm_baseUrl: row.llm_baseurl,
+        llm_model: row.llm_model,
       })),
     });
   } catch (error) {

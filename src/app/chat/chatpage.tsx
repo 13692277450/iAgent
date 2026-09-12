@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 "use client";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -30,25 +32,73 @@ import {
 import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
+import language from "react-syntax-highlighter/dist/cjs/languages/hljs/1c";
 export default function Chat() {
   const [input, setInput] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("AISSTANT");
   const [model, setModel] = useState("deepseek-v4-flash");
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [deepThink, setDeepThink] = useState(false);
-  const modelList = [
-    "deepseek-v4-flash",
-    "deepseek-v4-pro",
-    "deepseek-reasoning",
-    "kimi-k3",
-    "qwen3.7-max",
-  ];
+  const langMap: Record<string, string> = {
+    py: "python",
+    js: "javascript",
+    ts: "typescript",
+    sh: "bash",
+    html: "html",
+    css: "css",
+    xml: "xml",
+    json: "json",
+    yaml: "yaml",
+    md: "markdown",
+    sql: "sql",
+    php: "php",
+    ruby: "ruby",
+    go: "go",
+    rb: "ruby",
+    cpp: "cpp",
+    c: "c",
+    java: "java",
+    csharp: "csharp",
+    cs: "csharp",
+  };
+  const normalizedLang = langMap[language] || language || "text";
+  // 系统提示选择System Prompt上拉菜单
+  const [systemPrompts, setSystemPrompts] = useState<
+    {
+      id: number;
+      system_prompt_name: string;
+      system_prompt_content: string;
+      system_prompt_format?: string;
+    }[]
+  >([]);
+
+  const [selectedSystemPrompt, setSelectedSystemPrompt] = useState<{
+    id: number;
+    system_prompt_name: string;
+    system_prompt_content: string;
+  } | null>(null);
+
+  // 页面加载时拉取 system prompt 列表
+  useEffect(() => {
+    fetch("/api/system_prompt")
+      .then((res) => res.json())
+      .then((data) => {
+        setSystemPrompts(data.system_prompts); // ✅ 用 data.system_prompts
+        if (data.system_prompts.length > 0) {
+          setSelectedSystemPrompt(data.system_prompts[0]);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch system prompts", err));
+  }, []);
+
+  // 系统提示选择LLM上拉菜单
   const [selectedModel, setSelectedModel] = useState<{
     id: number;
-    name: string;
-    apiKey: string;
-    baseUrl: string;
-    model: string;
+    llm_name: string;
+    llm_apiKey: string;
+    llm_baseUrl: string;
+    llm_model: string;
   } | null>(null);
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
@@ -56,9 +106,10 @@ export default function Chat() {
       // 🚨 在这里把 deepThink 作为 body 的一部分传给后端
       body: {
         deepThink,
-        apiKey: selectedModel?.apiKey,
-        baseUrl: selectedModel?.baseUrl,
-        model: selectedModel?.model,
+        selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
+        llm_apiKey: selectedModel?.llm_apiKey,
+        llm_baseUrl: selectedModel?.llm_baseUrl,
+        llm_model: selectedModel?.llm_model,
       },
     }),
   });
@@ -66,10 +117,10 @@ export default function Chat() {
   const [models, setModels] = useState<
     {
       id: number;
-      name: string;
-      apiKey: string;
-      baseUrl: string;
-      model: string;
+      llm_name: string;
+      llm_apiKey: string;
+      llm_baseUrl: string;
+      llm_model: string;
     }[]
   >([]);
 
@@ -101,6 +152,16 @@ export default function Chat() {
     if (textContent) {
       setInput(textContent);
     }
+  };
+
+  // 提交时把 deepThink 作为第二个参数传进去
+  const handleDeepThinkingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(
+      { text: input },
+      { body: { deepThink } }, // 🚨 每次发送时动态传入
+    );
+    setInput("");
   };
 
   // 🚨 处理 AI 消息点击：复制到剪贴板
@@ -316,8 +377,20 @@ export default function Chat() {
                           </div>
 
                           {/* 文本框内容 */}
-                          <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
-                            {text}
+                          <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+                            <SyntaxHighlighter
+                              language={language || "text"}
+                              style={oneDark}
+                              customStyle={{
+                                margin: 0,
+                                padding: 0,
+                                background: "transparent",
+                                fontSize: "0.875rem",
+                              }}
+                              wrapLongLines
+                            >
+                              {text}
+                            </SyntaxHighlighter>
                           </div>
                         </div>
                       </div>
@@ -355,7 +428,9 @@ export default function Chat() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          sendMessage({ text: input });
+          sendMessage({
+            text: input,
+          });
           setInput("");
         }}
         className="flex-shrink-0 w-full max-w-3xl mx-auto pb-[2px]"
@@ -395,28 +470,42 @@ export default function Chat() {
             </Button>
 
             {/* 2. Agent 模式选择 */}
-            <div className="flex items-center bg-slate-900/60 border border-cyan-400/30 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                className="h-8 px-3 text-xs text-cyan-300 bg-cyan-500/20"
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
+                <Cpu className="w-4 h-4 mr-1.5" />
+                {selectedSystemPrompt?.system_prompt_name ?? "System Prompt"}
+                <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="start"
+                className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md"
               >
-                <Code className="w-3.5 h-3.5 inline mr-1" /> CODE
-              </button>
-              <div className="w-px h-4 bg-cyan-400/30" />
-              <button
-                type="button"
-                className="h-8 px-3 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
-              >
-                <PenLine className="w-3.5 h-3.5 inline mr-1" /> ASSIST
-              </button>
-              <div className="w-px h-4 bg-cyan-400/30" />
-              <button
-                type="button"
-                className="h-8 px-3 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
-              >
-                <Puzzle className="w-3.5 h-3.5 inline mr-1" /> WRITE
-              </button>
-            </div>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-xs text-cyan-400">
+                    SYSTEM PROMPT
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator className="bg-cyan-400/20" />
+
+                {systemPrompts.map((sp) => (
+                  <DropdownMenuItem
+                    key={sp.id}
+                    onClick={() => {
+                      setSelectedSystemPrompt(sp);
+                    }}
+                    className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                      selectedSystemPrompt?.id === sp.id
+                        ? "bg-cyan-500/10 text-cyan-300"
+                        : "No Name"
+                    }`}
+                  >
+                    🚀 {sp.system_prompt_content}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* 3. 附件 */}
             <Button
@@ -454,25 +543,17 @@ export default function Chat() {
               <Globe className="w-4 h-4" />
             </Button>
             {/* 7. 模型选择下拉菜单 */}
-            {/* 7. 模型选择下拉菜单 */}
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all"
-                >
-                  <Cpu className="w-4 h-4 mr-1.5" />
-                  {model}
-                  <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
-                </Button>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
+                <Cpu className="w-4 h-4 mr-1.5" />
+                {model}
+                <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
                 align="start"
                 className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md"
               >
-                {/* 🚨 关键修复：用 DropdownMenuGroup 包裹 Label 和 Items */}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-xs text-cyan-400">
                     SELECT MODEL
@@ -481,68 +562,22 @@ export default function Chat() {
 
                 <DropdownMenuSeparator className="bg-cyan-400/20" />
 
-                {/* 🚨 修复：用 onClick 替代 onSelect，避免焦点丢失 */}
-                <DropdownMenuItem
-                  onClick={() => setModel("deepseek-v4-flash")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "deepseek-v4-flash"
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : ""
-                  }`}
-                >
-                  🚀 deepseek-v4-flash
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => setModel("deepseek-v4-pro")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "deepseek-v4-pro"
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : ""
-                  }`}
-                >
-                  🧠 deepseek-v4-pro
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => setModel("deepseek-chat")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "deepseek-chat"
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : ""
-                  }`}
-                >
-                  💬 deepseek-chat
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => setModel("deepseek-reasoner")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "deepseek-reasoner"
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : ""
-                  }`}
-                >
-                  🔍 deepseek-reasoner
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setModel("qwen3.7-flash")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "qwen3.7-flash"
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : ""
-                  }`}
-                >
-                  🔍 qwen3.7-flash
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setModel("kimi-k3")}
-                  className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                    model === "kimi-k3" ? "bg-cyan-500/10 text-cyan-300" : ""
-                  }`}
-                >
-                  🔍 kimi-k3
-                </DropdownMenuItem>
+                {models.map((m) => (
+                  <DropdownMenuItem
+                    key={m.id}
+                    onClick={() => {
+                      setSelectedModel(m);
+                      setModel(m.llm_model);
+                    }}
+                    className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
+                      model === m.llm_model
+                        ? "bg-cyan-500/10 text-cyan-300"
+                        : "No Name"
+                    }`}
+                  >
+                    🚀 {m.llm_model}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
