@@ -13,17 +13,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. 查询账号
+   // 3. 查询账号（统一转小写，防止大小写问题）
+    const normalizedUsername = String(username).trim().toLowerCase();
     const result = await pool.query(
       `SELECT id, username, password, islocker 
        FROM public.account 
-       WHERE username = $1`,
-      [username],
+       WHERE LOWER(username) = $1`,
+      [normalizedUsername]
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "账号或密码错误" }, { status: 401 });
+      return NextResponse.json(
+        { error: "账号或密码错误" },
+        { status: 401 }
+      );
     }
+
 
     const account = result.rows[0];
 

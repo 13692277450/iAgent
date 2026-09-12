@@ -169,10 +169,22 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
+}
+
+/* 去掉 react-syntax-highlighter 每一行的背景 */
+pre[class*="language-"],
+code[class*="language-"] {
+  background: transparent !important;
+}
+
+pre[class*="language-"]>code>span {
+  background: transparent !important;
 }

@@ -33,37 +33,269 @@ import {
 import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
-import language from "react-syntax-highlighter/dist/cjs/languages/hljs/1c";
+// ==================== AI 输出富文本渲染（代码块语法高亮 + 行内代码样式） ====================
+
+// 常见语言别名 → react-syntax-highlighter（Prism/refractor）标准语言名
+// 该库已内置全部 Prism 语言，未知语言会自动降级为纯文本（不会报错）
+const CODE_LANG_ALIASES: Record<string, string> = {
+  py: "python",
+  js: "javascript",
+  node: "javascript",
+  jsx: "jsx",
+  ts: "typescript",
+  tsx: "tsx",
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  console: "bash",
+  bashrc: "bash",
+  rb: "ruby",
+  rs: "rust",
+  cs: "csharp",
+  "c#": "csharp",
+  "c++": "cpp",
+  "c-cpp": "cpp",
+  htm: "markup",
+  html: "markup",
+  xml: "markup",
+  vue: "markup",
+  svg: "markup",
+  md: "markdown",
+  yml: "yaml",
+  toml: "ini",
+  shellsession: "shell-session",
+};
+
+// 文件名扩展名 → 语言（用于 render_output 未声明 language 时通过 filename 推断）
+const FILE_EXT_LANG: Record<string, string> = {
+  py: "python",
+  js: "javascript",
+  mjs: "javascript",
+  cjs: "javascript",
+  jsx: "jsx",
+  ts: "typescript",
+  tsx: "tsx",
+  sh: "bash",
+  bash: "bash",
+  zsh: "bash",
+  ps1: "powershell",
+  bat: "batch",
+  rb: "ruby",
+  rs: "rust",
+  go: "go",
+  c: "c",
+  h: "c",
+  cpp: "cpp",
+  cxx: "cpp",
+  cc: "cpp",
+  hpp: "cpp",
+  java: "java",
+  cs: "csharp",
+  php: "php",
+  swift: "swift",
+  kt: "kotlin",
+  kts: "kotlin",
+  scala: "scala",
+  dart: "dart",
+  r: "r",
+  lua: "lua",
+  pl: "perl",
+  pm: "perl",
+  sql: "sql",
+  json: "json",
+  yaml: "yaml",
+  yml: "yaml",
+  toml: "ini",
+  ini: "ini",
+  md: "markdown",
+  markdown: "markdown",
+  html: "markup",
+  htm: "markup",
+  css: "css",
+  scss: "scss",
+  less: "less",
+  xml: "markup",
+  vue: "markup",
+  dockerfile: "docker",
+  gradle: "gradle",
+  jl: "julia",
+  fs: "fsharp",
+  ex: "elixir",
+  exs: "elixir",
+  hs: "haskell",
+  lhs: "haskell",
+  clj: "clojure",
+  zig: "zig",
+  nim: "nim",
+  graphql: "graphql",
+  diff: "diff",
+  makefile: "makefile",
+};
+
+// 模型常用来"占位"的语言值，不能当真语言使用
+const LANG_PLACEHOLDERS = new Set([
+  "text",
+  "code",
+  "plain",
+  "txt",
+  "content",
+  "textblock",
+]);
+
+/** 把 AI 给的模糊语言名/文件名归一化成 react-syntax-highlighter 支持的语言名 */
+function resolveCodeLang(lang?: string, filename?: string): string {
+  const raw = (lang || "").trim().toLowerCase();
+  if (!LANG_PLACEHOLDERS.has(raw)) {
+    return CODE_LANG_ALIASES[raw] || raw;
+  }
+  // 语言缺失或只是占位符时，尝试用文件名扩展名推断
+  const fileName = (filename || "").trim().toLowerCase();
+  const dotIdx = fileName.lastIndexOf(".");
+  if (dotIdx !== -1 && dotIdx < fileName.length - 1) {
+    const ext = fileName.slice(dotIdx + 1);
+    if (FILE_EXT_LANG[ext]) return FILE_EXT_LANG[ext];
+  }
+  return "text";
+}
+
+// ```lang\n...\n``` 围栏代码块
+const FENCED_CODE_RE = /```([a-zA-Z0-9_+.-]*)[ \t]*\r?\n([\s\S]*?)```/g;
+// 行内代码 `code`
+const INLINE_CODE_RE = /`([^`\n]+)`/g;
+
+type RichSegment =
+  | { kind: "text"; content: string }
+  | { kind: "code"; lang: string; content: string };
+
+function splitRichText(text: string): RichSegment[] {
+  const segments: RichSegment[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = null;
+  FENCED_CODE_RE.lastIndex = 0;
+  while ((match = FENCED_CODE_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        kind: "text",
+        content: text.slice(lastIndex, match.index),
+      });
+    }
+    const lang = (match[1] || "").trim().split(/[\s,]+/)[0];
+    segments.push({ kind: "code", lang, content: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    segments.push({ kind: "text", content: text.slice(lastIndex) });
+  }
+  return segments.length > 0 ? segments : [{ kind: "text", content: text }];
+}
+
+/** 把普通文本里的 `行内代码` 渲染成带样式的 code 标签 */
+function renderInlineCode(content: string) {
+  const nodes = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = null;
+  let k = 0;
+  INLINE_CODE_RE.lastIndex = 0;
+  while ((match = INLINE_CODE_RE.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(content.slice(lastIndex, match.index));
+    }
+    nodes.push(
+      <code
+        key={`inline-code-${k++}`}
+        className="rounded bg-slate-800/80 px-1.5 py-0.5 text-slate-200 text-[0.85em] font-mono"
+      >
+        {match[1]}
+      </code>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) {
+    nodes.push(content.slice(lastIndex));
+  }
+  return nodes;
+}
+
+/** 把 AI 回复渲染成"普通文本 + 高亮代码块"的混合富文本 */
+function renderRichText(text: string) {
+  const segments = splitRichText(text);
+  return segments.map((seg, i) => {
+    if (seg.kind === "code") {
+      const lang = resolveCodeLang(seg.lang);
+      const codeText = seg.content.replace(/\n$/, "");
+      return (
+        <div
+          key={`rich-code-${i}`}
+          className="my-2 rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden"
+        >
+          {/* 代码块顶部：语言标签 + 复制按钮 */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-cyan-400/20">
+            <span className="text-xs font-mono text-cyan-400 uppercase">
+              {seg.lang.trim() || "code"}
+            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(codeText);
+                } catch (err) {
+                  console.error("复制失败", err);
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              复制
+            </button>
+          </div>
+
+          {/* 代码内容：语法高亮 */}
+          <div className="p-3 overflow-x-auto">
+            <SyntaxHighlighter
+              language={lang}
+              style={oneDark}
+              customStyle={{
+                margin: 0,
+                padding: 0,
+                background: "transparent",
+                fontSize: "0.875rem",
+              }}
+              wrapLongLines
+            >
+              {seg.content}
+            </SyntaxHighlighter>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <span key={`rich-text-${i}`} className="whitespace-pre-wrap">
+        {renderInlineCode(seg.content)}
+      </span>
+    );
+  });
+}
+
 export default function Chat() {
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+    message: "",
+    visible: false,
+  });
+
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+    // 3 秒后自动隐藏
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 3000);
+  };
+
   const [input, setInput] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState("AISSTANT");
+  // const [systemPrompt, setSystemPrompt] = useState("AISSTANT");
   const [model, setModel] = useState("deepseek-v4-flash");
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [deepThink, setDeepThink] = useState(false);
-  const langMap: Record<string, string> = {
-    py: "python",
-    js: "javascript",
-    ts: "typescript",
-    sh: "bash",
-    html: "html",
-    css: "css",
-    xml: "xml",
-    json: "json",
-    yaml: "yaml",
-    md: "markdown",
-    sql: "sql",
-    php: "php",
-    ruby: "ruby",
-    go: "go",
-    rb: "ruby",
-    cpp: "cpp",
-    c: "c",
-    java: "java",
-    csharp: "csharp",
-    cs: "csharp",
-  };
-  const normalizedLang = langMap[language] || language || "text";
   // 系统提示选择System Prompt上拉菜单
   const [systemPrompts, setSystemPrompts] = useState<
     {
@@ -71,6 +303,7 @@ export default function Chat() {
       system_prompt_name: string;
       system_prompt_content: string;
       system_prompt_format?: string;
+      is_default: boolean;
     }[]
   >([]);
 
@@ -78,6 +311,7 @@ export default function Chat() {
     id: number;
     system_prompt_name: string;
     system_prompt_content: string;
+    is_default: boolean;
   } | null>(null);
 
   // 页面加载时拉取 system prompt 列表
@@ -86,9 +320,15 @@ export default function Chat() {
       .then((res) => res.json())
       .then((data) => {
         setSystemPrompts(data.system_prompts); // ✅ 用 data.system_prompts
-        if (data.system_prompts.length > 0) {
-          setSelectedSystemPrompt(data.system_prompts[0]);
+        const defaultPrompt =
+          data.system_prompts.find((sp: any) => sp.is_default) ??
+          data.system_prompts[0];
+        if (defaultPrompt) {
+          setSelectedSystemPrompt(defaultPrompt);
         }
+        //   if (data.system_prompts.length > 0) {
+        //     setSelectedSystemPrompt(data.system_prompts[0]);
+        //   }
       })
       .catch((err) => console.error("Failed to fetch system prompts", err));
   }, []);
@@ -100,6 +340,7 @@ export default function Chat() {
     llm_apiKey: string;
     llm_baseUrl: string;
     llm_model: string;
+    is_default: boolean; // 🚨
   } | null>(null);
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
@@ -111,6 +352,7 @@ export default function Chat() {
         llm_apiKey: selectedModel?.llm_apiKey,
         llm_baseUrl: selectedModel?.llm_baseUrl,
         llm_model: selectedModel?.llm_model,
+        is_default: selectedModel?.is_default, // 🚨
       },
     }),
   });
@@ -122,6 +364,7 @@ export default function Chat() {
       llm_apiKey: string;
       llm_baseUrl: string;
       llm_model: string;
+      is_default: boolean; // 🚨
     }[]
   >([]);
 
@@ -131,7 +374,13 @@ export default function Chat() {
       .then((res) => res.json())
       .then((data) => {
         setModels(data.models);
-        if (data.models.length > 0) setSelectedModel(data.models[0]);
+        const defaultModel =
+          data.models.find((m: any) => m.is_default) ?? data.models[0];
+        if (defaultModel) {
+          setSelectedModel(defaultModel);
+          setModel(defaultModel.llm_model);
+        }
+        // if (data.models.length > 0) setSelectedModel(data.models[0]);
       })
       .catch((err) => console.error("Failed to fetch models", err));
   }, []);
@@ -232,10 +481,11 @@ export default function Chat() {
                   }
                   case "tool-render_output": {
                     const content = (part.input as any)?.content ?? "";
-                    const language = (part.input as any)?.language ?? "text";
+                    const rawLang = (part.input as any)?.language ?? "";
                     const filename =
                       (part.input as any)?.filename ??
                       `ai-output-${message.id}-${i}.txt`;
+                    const lang = resolveCodeLang(rawLang, filename);
 
                     return (
                       <div
@@ -246,7 +496,7 @@ export default function Chat() {
                           {/* 顶部菜单栏 */}
                           <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
                             <span className="text-xs font-mono text-cyan-400 uppercase">
-                              {language}
+                              {lang || "code"}
                             </span>
 
                             <div className="flex items-center gap-1">
@@ -258,9 +508,10 @@ export default function Chat() {
                                     await navigator.clipboard.writeText(
                                       content,
                                     );
-                                    alert("Copied to clipboard");
+                                    showToast("✅ Copied to clipboard");
                                   } catch (err) {
-                                    console.error("复制失败", err);
+                                    showToast("❌ Copy failed");
+                                    console.error("Copy failed", err);
                                   }
                                 }}
                                 title="复制"
@@ -295,9 +546,21 @@ export default function Chat() {
                             </div>
                           </div>
 
-                          {/* 文本框内容 */}
-                          <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                            {content}
+                          {/* 文本框内容：代码用语法高亮渲染 */}
+                          <div className="p-3 text-sm text-slate-100 overflow-x-auto">
+                            <SyntaxHighlighter
+                              language={lang}
+                              style={oneDark}
+                              customStyle={{
+                                margin: 0,
+                                padding: 0,
+                                background: "transparent",
+                                fontSize: "0.875rem",
+                              }}
+                              wrapLongLines
+                            >
+                              {content}
+                            </SyntaxHighlighter>
                           </div>
                         </div>
                       </div>
@@ -340,8 +603,9 @@ export default function Chat() {
                                 onClick={async () => {
                                   try {
                                     await navigator.clipboard.writeText(text);
-                                    alert("Copied to clipboard");
+                                    showToast("✅ Copied to clipboard");
                                   } catch (err) {
+                                    showToast("❌ Copy failed");
                                     console.error("复制失败", err);
                                   }
                                 }}
@@ -377,21 +641,9 @@ export default function Chat() {
                             </div>
                           </div>
 
-                          {/* 文本框内容 */}
+                          {/* 文本框内容：普通文本 + 代码块语法高亮 */}
                           <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                            <SyntaxHighlighter
-                              language={language || "text"}
-                              style={oneDark}
-                              customStyle={{
-                                margin: 0,
-                                padding: 0,
-                                background: "transparent",
-                                fontSize: "0.875rem",
-                              }}
-                              wrapLongLines
-                            >
-                              {text}
-                            </SyntaxHighlighter>
+                            {renderRichText(text)}
                           </div>
                         </div>
                       </div>
@@ -472,7 +724,7 @@ export default function Chat() {
 
             {/* 2. Agent 模式选择 */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
+              <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-600/60 transition-all">
                 <BookAIcon className="w-4 h-4 mr-1.5" />
                 {selectedSystemPrompt?.system_prompt_name ?? "System Prompt"}
                 <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
@@ -498,7 +750,7 @@ export default function Chat() {
                     }}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
                       selectedSystemPrompt?.id === sp.id
-                        ? "bg-cyan-500/10 text-cyan-300"
+                        ? "bg-cyan-200/10 text-cyan-500"
                         : "No Name"
                     }`}
                   >
@@ -512,7 +764,7 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-cyan-600 hover:bg-cyan-500/10 rounded-lg border border-transparent hover:border-cyan-300/40"
+              className="h-8 w-8 text-cyan-600 hover:bg-cyan-500/10 rounded-lg border border-transparent hover:border-white-300/40"
             >
               <Paperclip className="w-4 h-4" />
             </Button>
@@ -595,6 +847,20 @@ export default function Chat() {
       </form>
 
       {showLoader && <div>Thinking...</div>}
+      {/* 🚨 自定义 Toast */}
+      <div
+        className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
+          toast.visible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-2 pointer-events-none"
+        } ${
+          toast.message.startsWith("✅")
+            ? "bg-cyan-500/20 text-cyan-100 border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+            : "bg-red-500/20 text-red-100 border-red-400/50 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+        }`}
+      >
+        {toast.message}
+      </div>
     </div>
   );
 }

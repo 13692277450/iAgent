@@ -11,6 +11,8 @@ export async function GET() {
         llm_apiKey: row.llm_apikey,
         llm_baseUrl: row.llm_baseurl,
         llm_model: row.llm_model,
+        is_default: row.is_default,   // 🚨
+
       })),
     });
   } catch (error) {

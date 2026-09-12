@@ -1,5 +1,4 @@
 
-import { systemPrompt } from "@/lib/system_prompt";
 import { ALL_TOOLS } from "@/lib/tools";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";

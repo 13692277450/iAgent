@@ -10,6 +10,7 @@ export async function GET() {
         system_prompt_name: row.system_prompt_name,
         system_prompt_content: row.system_prompt_content,
         system_prompt_format: row.system_prompt_format,
+        is_default: row.is_default,
       })),
     });
   } catch (error) {

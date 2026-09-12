@@ -113,12 +113,13 @@ export type SystemPromptRecord = {
   system_prompt_name: string;
   system_prompt_content: string;
   system_prompt_format: string;
+  is_default: boolean;
 };
 
 // 1. 查询所有System Prompt Record（用于前端下拉菜单）
 export async function listSystemPrompts() {
   const result = await pool.query<SystemPromptRecord>(
-    `SELECT id, system_prompt_name, system_prompt_content, system_prompt_format 
+    `SELECT id, system_prompt_name, system_prompt_content, system_prompt_format, is_default
      FROM public.system_prompt 
      ORDER BY system_prompt_name ASC`
   );

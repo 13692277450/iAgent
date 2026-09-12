@@ -8,12 +8,13 @@ export type LlmRecord = {
   llm_apikey: string;
   llm_baseurl: string;
   llm_model: string;
+  is_default: boolean;   // 🚨
 };
 
 // 1. 查询所有模型（用于前端下拉菜单）
 export async function listLlms() {
   const result = await pool.query<LlmRecord>(
-    `SELECT id, llm_name, llm_apikey, llm_baseurl, llm_model 
+    `SELECT id, llm_name, llm_apikey, llm_baseurl, llm_model, is_default
      FROM public.llm 
      ORDER BY llm_name ASC`
   );
@@ -23,7 +24,7 @@ export async function listLlms() {
 // 2. 根据 ID 查询单个模型（用于 chat 路由）
 export async function getLlmById(id: number): Promise<LlmRecord | null> {
   const result = await pool.query<LlmRecord>(
-    `SELECT id, llm_name, llm_apikey, llm_baseurl, llm_model 
+    `SELECT id, llm_name, llm_apikey, llm_baseurl, llm_model, is_default
      FROM public.llm 
      WHERE id = $1`,
     [id]
