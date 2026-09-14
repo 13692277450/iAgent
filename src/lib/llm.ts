@@ -41,6 +41,7 @@ export function createModelProvider(record: LlmRecord) {
     const deepseek = createDeepSeek({
       apiKey: llm_apikey,
       baseURL: llm_baseurl,
+      
     });
     return { provider: deepseek, model: llm_model, providerKey: "deepseek" };
   }
@@ -50,6 +51,7 @@ export function createModelProvider(record: LlmRecord) {
     name: "custom",
     apiKey: llm_apikey,
     baseURL: llm_baseurl,
+    includeUsage: true
   });
   return { provider: compatible, model: llm_model, providerKey: "custom" };
 }

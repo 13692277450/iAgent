@@ -1,4 +1,6 @@
 
+import { getSession } from "@/lib/auth";
+import { pool } from "@/lib/db";
 import { ALL_TOOLS } from "@/lib/tools";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -13,6 +15,9 @@ import {
 import { z } from "zod";
 
 export async function POST(req: Request) {
+  const session = await getSession();   // 🚨 从 cookie 拿
+  const username = session ?? "anonymous";
+
   const {
     messages,
     deepThink,
@@ -49,6 +54,28 @@ export async function POST(req: Request) {
       system: systemPrompt,  //  system prompt
       messages: await convertToModelMessages(messages),
       tools: ALL_TOOLS,
+
+      onFinish: async ({ usage, text }) => {
+        console.log("========== usage 原始对象 ==========");
+        console.log(JSON.stringify(usage, null, 2));
+      try {
+        await pool.query(
+          `INSERT INTO public.token 
+             (username, llm_model, prompt_tokens, completion_tokens, total_tokens)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            username || "anonymous",
+            llm_model || "unknown",
+            usage.inputTokens ?? 0,
+            usage.outputTokens ?? 0,
+            usage.totalTokens ?? 0,
+          ]
+        );
+        console.log("&&&&&&&&&&token usage:", usage.inputTokenDetails)
+      } catch (err) {
+        console.error("Failed to record token usage:", err);
+      }
+    },
     });
   } else {
     // 通义千问、Kimi 等 OpenAI 兼容接口
@@ -69,6 +96,25 @@ export async function POST(req: Request) {
       system: systemPrompt,  //  system prompt  
       messages: await convertToModelMessages(messages),
       tools: ALL_TOOLS,
+      onFinish: async ({ usage, text }) => {
+      try {
+        await pool.query(
+          `INSERT INTO public.token 
+             (username, llm_model, prompt_tokens, completion_tokens, total_tokens)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            username || "anonymous",
+            llm_model || "unknown",
+            usage.inputTokens ?? 0,
+            usage.outputTokens ?? 0,
+            usage.totalTokens ?? 0,
+          ]
+        );
+        console.log("&&&&&&&&&&token usage:", usage.inputTokenDetails)
+      } catch (err) {
+        console.error("Failed to record token usage:", err);
+      }
+    },
     });
   }
 

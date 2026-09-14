@@ -4,21 +4,15 @@
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 import {
   BrainCircuit,
-  Bot,
   Paperclip,
-  Image as ImageIcon,
   Mic,
   Globe,
   Send,
-  Code2,
-  PenLine,
-  Puzzle,
   Download,
   Copy,
-  Code,
   BookAIcon,
 } from "lucide-react";
 import {
@@ -33,10 +27,26 @@ import {
 import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
-// ==================== AI 输出富文本渲染（代码块语法高亮 + 行内代码样式） ====================
 
-// 常见语言别名 → react-syntax-highlighter（Prism/refractor）标准语言名
-// 该库已内置全部 Prism 语言，未知语言会自动降级为纯文本（不会报错）
+// ==================== 类型 ====================
+type LLMModel = {
+  id: number;
+  llm_name: string;
+  llm_apiKey: string;
+  llm_baseUrl: string;
+  llm_model: string;
+  is_default: boolean;
+};
+
+type SystemPrompt = {
+  id: number;
+  system_prompt_name: string;
+  system_prompt_content: string;
+  system_prompt_format?: string;
+  is_default: boolean;
+};
+
+// ==================== 语言映射 ====================
 const CODE_LANG_ALIASES: Record<string, string> = {
   py: "python",
   js: "javascript",
@@ -66,7 +76,6 @@ const CODE_LANG_ALIASES: Record<string, string> = {
   shellsession: "shell-session",
 };
 
-// 文件名扩展名 → 语言（用于 render_output 未声明 language 时通过 filename 推断）
 const FILE_EXT_LANG: Record<string, string> = {
   py: "python",
   js: "javascript",
@@ -132,7 +141,6 @@ const FILE_EXT_LANG: Record<string, string> = {
   makefile: "makefile",
 };
 
-// 模型常用来"占位"的语言值，不能当真语言使用
 const LANG_PLACEHOLDERS = new Set([
   "text",
   "code",
@@ -142,13 +150,11 @@ const LANG_PLACEHOLDERS = new Set([
   "textblock",
 ]);
 
-/** 把 AI 给的模糊语言名/文件名归一化成 react-syntax-highlighter 支持的语言名 */
 function resolveCodeLang(lang?: string, filename?: string): string {
   const raw = (lang || "").trim().toLowerCase();
   if (!LANG_PLACEHOLDERS.has(raw)) {
     return CODE_LANG_ALIASES[raw] || raw;
   }
-  // 语言缺失或只是占位符时，尝试用文件名扩展名推断
   const fileName = (filename || "").trim().toLowerCase();
   const dotIdx = fileName.lastIndexOf(".");
   if (dotIdx !== -1 && dotIdx < fileName.length - 1) {
@@ -158,9 +164,7 @@ function resolveCodeLang(lang?: string, filename?: string): string {
   return "text";
 }
 
-// ```lang\n...\n``` 围栏代码块
 const FENCED_CODE_RE = /```([a-zA-Z0-9_+.-]*)[ \t]*\r?\n([\s\S]*?)```/g;
-// 行内代码 `code`
 const INLINE_CODE_RE = /`([^`\n]+)`/g;
 
 type RichSegment =
@@ -189,7 +193,6 @@ function splitRichText(text: string): RichSegment[] {
   return segments.length > 0 ? segments : [{ kind: "text", content: text }];
 }
 
-/** 把普通文本里的 `行内代码` 渲染成带样式的 code 标签 */
 function renderInlineCode(content: string) {
   const nodes = [];
   let lastIndex = 0;
@@ -216,65 +219,164 @@ function renderInlineCode(content: string) {
   return nodes;
 }
 
-/** 把 AI 回复渲染成"普通文本 + 高亮代码块"的混合富文本 */
-function renderRichText(text: string) {
+async function copyToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+  } else {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      document.execCommand("copy");
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+}
+
+function downloadText(text: string, filename: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function BoxActions({
+  content,
+  filename,
+  onToast,
+}: {
+  content: string;
+  filename: string;
+  onToast: (msg: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await copyToClipboard(content);
+            onToast("✅ Copied to clipboard");
+          } catch (err) {
+            onToast("❌ Copy failed");
+            console.error("复制失败", err);
+          }
+        }}
+        title="复制"
+        className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
+      >
+        <Copy className="w-3.5 h-3.5" />
+        复制
+      </button>
+      <button
+        type="button"
+        onClick={() => downloadText(content, filename)}
+        title="下载"
+        className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
+      >
+        <Download className="w-3.5 h-3.5" />
+        下载
+      </button>
+    </div>
+  );
+}
+
+function renderRichText(
+  text: string,
+  isStreaming: boolean,
+  onToast: (msg: string) => void,
+) {
   const segments = splitRichText(text);
   return segments.map((seg, i) => {
     if (seg.kind === "code") {
       const lang = resolveCodeLang(seg.lang);
       const codeText = seg.content.replace(/\n$/, "");
+      const ext = seg.lang.trim() || "txt";
       return (
         <div
           key={`rich-code-${i}`}
-          className="my-2 rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden"
+          className="my-2 rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur-md w-full"
         >
-          {/* 代码块顶部：语言标签 + 复制按钮 */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-cyan-400/20">
+          <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
             <span className="text-xs font-mono text-cyan-400 uppercase">
               {seg.lang.trim() || "code"}
             </span>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(codeText);
-                } catch (err) {
-                  console.error("复制失败", err);
-                }
-              }}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              复制
-            </button>
+            <BoxActions
+              content={codeText}
+              filename={`code-${i}.${ext}`}
+              onToast={onToast}
+            />
           </div>
-
-          {/* 代码内容：语法高亮 */}
           <div className="p-3 overflow-x-auto">
-            <SyntaxHighlighter
-              language={lang}
-              style={oneDark}
-              customStyle={{
-                margin: 0,
-                padding: 0,
-                background: "transparent",
-                fontSize: "0.875rem",
-              }}
-              wrapLongLines
-            >
-              {seg.content}
-            </SyntaxHighlighter>
+            {isStreaming ? (
+              <pre className="m-0 p-0 font-mono text-[0.875rem] whitespace-pre-wrap break-words text-slate-100">
+                {seg.content}
+              </pre>
+            ) : (
+              <SyntaxHighlighter
+                language={lang}
+                style={oneDark}
+                customStyle={{
+                  margin: 0,
+                  padding: 0,
+                  background: "transparent",
+                  fontSize: "0.875rem",
+                }}
+                wrapLongLines
+              >
+                {seg.content}
+              </SyntaxHighlighter>
+            )}
           </div>
         </div>
       );
     }
+    const textContent = seg.content;
     return (
-      <span key={`rich-text-${i}`} className="whitespace-pre-wrap">
-        {renderInlineCode(seg.content)}
-      </span>
+      <div
+        key={`rich-text-${i}`}
+        className="my-2 rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur-md w-full"
+      >
+        <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
+          <span className="text-xs font-mono text-cyan-400 uppercase">
+            TEXT
+          </span>
+          <BoxActions
+            content={textContent}
+            filename={`text-${i}.txt`}
+            onToast={onToast}
+          />
+        </div>
+        <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+          {renderInlineCode(textContent)}
+        </div>
+      </div>
     );
   });
 }
+
+const AIMessageText = memo(function AIMessageText({
+  text,
+  isStreaming,
+  onToast,
+}: {
+  text: string;
+  isStreaming: boolean;
+  onToast: (msg: string) => void;
+}) {
+  return <>{renderRichText(text, isStreaming, onToast)}</>;
+});
 
 export default function Chat() {
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
@@ -284,107 +386,75 @@ export default function Chat() {
 
   const showToast = (message: string) => {
     setToast({ message, visible: true });
-    // 3 秒后自动隐藏
     setTimeout(() => {
       setToast((prev) => ({ ...prev, visible: false }));
     }, 3000);
   };
 
   const [input, setInput] = useState("");
-  // const [systemPrompt, setSystemPrompt] = useState("AISSTANT");
-  const [model, setModel] = useState("deepseek-v4-flash");
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [deepThink, setDeepThink] = useState(false);
-  // 系统提示选择System Prompt上拉菜单
-  const [systemPrompts, setSystemPrompts] = useState<
-    {
-      id: number;
-      system_prompt_name: string;
-      system_prompt_content: string;
-      system_prompt_format?: string;
-      is_default: boolean;
-    }[]
-  >([]);
 
-  const [selectedSystemPrompt, setSelectedSystemPrompt] = useState<{
-    id: number;
-    system_prompt_name: string;
-    system_prompt_content: string;
-    is_default: boolean;
-  } | null>(null);
+  const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
+  const [selectedSystemPrompt, setSelectedSystemPrompt] =
+    useState<SystemPrompt | null>(null);
 
-  // 页面加载时拉取 system prompt 列表
-  useEffect(() => {
-    fetch("/api/system_prompts")
-      .then((res) => res.json())
-      .then((data) => {
-        setSystemPrompts(data.system_prompts); // ✅ 用 data.system_prompts
-        const defaultPrompt =
-          data.system_prompts.find((sp: any) => sp.is_default) ??
-          data.system_prompts[0];
-        if (defaultPrompt) {
-          setSelectedSystemPrompt(defaultPrompt);
-        }
-        //   if (data.system_prompts.length > 0) {
-        //     setSelectedSystemPrompt(data.system_prompts[0]);
-        //   }
-      })
-      .catch((err) => console.error("Failed to fetch system prompts", err));
-  }, []);
+  const [models, setModels] = useState<LLMModel[]>([]);
+  const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
 
-  // 系统提示选择LLM上拉菜单
-  const [selectedModel, setSelectedModel] = useState<{
-    id: number;
-    llm_name: string;
-    llm_apiKey: string;
-    llm_baseUrl: string;
-    llm_model: string;
-    is_default: boolean; // 🚨
-  } | null>(null);
+  // 🚨 useChat 的 body 不再放动态值，统一在 sendMessage 里传
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      // 🚨 在这里把 deepThink 作为 body 的一部分传给后端
-      body: {
-        deepThink,
-        selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
-        llm_apiKey: selectedModel?.llm_apiKey,
-        llm_baseUrl: selectedModel?.llm_baseUrl,
-        llm_model: selectedModel?.llm_model,
-        is_default: selectedModel?.is_default, // 🚨
-      },
     }),
   });
-  const lastMessage = messages[messages.length - 1];
-  const [models, setModels] = useState<
-    {
-      id: number;
-      llm_name: string;
-      llm_apiKey: string;
-      llm_baseUrl: string;
-      llm_model: string;
-      is_default: boolean; // 🚨
-    }[]
-  >([]);
 
-  // 页面加载时拉取模型列表
+  const lastMessage = messages[messages.length - 1];
+
+  // ==================== 拉取 System Prompts ====================
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/system_prompts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const list: SystemPrompt[] = data.system_prompts ?? [];
+        setSystemPrompts(list);
+        const defaultPrompt = list.find((sp) => sp.is_default) ?? list[0];
+        if (defaultPrompt) {
+          setSelectedSystemPrompt(defaultPrompt);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch system prompts", err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ==================== 拉取 LLM 模型 ====================
+  // 🚨 加 cancelled 标记：防止请求慢返回时把用户已经切换的选择覆盖回默认值
+  useEffect(() => {
+    let cancelled = false;
     fetch("/api/llm")
       .then((res) => res.json())
       .then((data) => {
-        setModels(data.models);
-        const defaultModel =
-          data.models.find((m: any) => m.is_default) ?? data.models[0];
+        if (cancelled) return;
+        const list: LLMModel[] = data.models ?? [];
+        setModels(list);
+        const defaultModel = list.find((m) => m.is_default) ?? list[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
-          setModel(defaultModel.llm_model);
+          console.log("default model: ", defaultModel);
         }
-        // if (data.models.length > 0) setSelectedModel(data.models[0]);
       })
       .catch((err) => console.error("Failed to fetch models", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // ==================== 自动滚动到底部 ====================
   useEffect(() => {
     const el = messagesScrollRef.current;
     if (el && messages.length > 0) {
@@ -392,7 +462,6 @@ export default function Chat() {
     }
   }, [messages]);
 
-  // 🚨 处理用户消息点击：填充到 textarea
   const handleUserMessageClick = (message: any) => {
     const textContent = message.parts
       ?.filter((part: any) => part.type === "text")
@@ -404,17 +473,37 @@ export default function Chat() {
     }
   };
 
-  // 提交时把 deepThink 作为第二个参数传进去
-  const handleDeepThinkingSubmit = (e: React.FormEvent) => {
+  // ==================== 提交 ====================
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedModel) {
+      showToast("❌ 请先选择模型");
+      return;
+    }
+    if (!input.trim()) {
+      return;
+    }
+    console.log("=== 提交参数 ===", {
+      deepThink,
+      llm_model: selectedModel.llm_model,
+      llm_baseUrl: selectedModel.llm_baseUrl,
+      systemPrompt: selectedSystemPrompt?.system_prompt_name,
+    });
     sendMessage(
       { text: input },
-      { body: { deepThink } }, // 🚨 每次发送时动态传入
+      {
+        body: {
+          deepThink,
+          selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
+          llm_apiKey: selectedModel.llm_apiKey,
+          llm_baseUrl: selectedModel.llm_baseUrl,
+          llm_model: selectedModel.llm_model,
+        },
+      },
     );
     setInput("");
   };
 
-  // 🚨 处理 AI 消息点击：复制到剪贴板
   const handleAIMessageClick = async (message: any) => {
     const textContent = message.parts
       ?.filter((part: any) => part.type === "text")
@@ -423,9 +512,7 @@ export default function Chat() {
 
     if (textContent) {
       try {
-        // 使用浏览器原生的剪贴板 API
-        await navigator.clipboard.writeText(textContent);
-        // 这里可以做一个简单的反馈，比如弹一个窗，或者 console.log
+        await copyToClipboard(textContent);
         console.log("Already copied to clipboard: ", textContent);
       } catch (err) {
         console.error("Copy failed to clipboard: ", err);
@@ -493,60 +580,16 @@ export default function Chat() {
                         className="w-full max-w-3xl my-2"
                       >
                         <div className="rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur-md">
-                          {/* 顶部菜单栏 */}
                           <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
                             <span className="text-xs font-mono text-cyan-400 uppercase">
                               {lang || "code"}
                             </span>
-
-                            <div className="flex items-center gap-1">
-                              {/* 复制按钮 */}
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(
-                                      content,
-                                    );
-                                    showToast("✅ Copied to clipboard");
-                                  } catch (err) {
-                                    showToast("❌ Copy failed");
-                                    console.error("Copy failed", err);
-                                  }
-                                }}
-                                title="复制"
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                                复制
-                              </button>
-
-                              {/* 下载按钮 */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const blob = new Blob([content], {
-                                    type: "text/plain;charset=utf-8",
-                                  });
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = filename;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  URL.revokeObjectURL(url);
-                                }}
-                                title="下载"
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                下载
-                              </button>
-                            </div>
+                            <BoxActions
+                              content={content}
+                              filename={filename}
+                              onToast={showToast}
+                            />
                           </div>
-
-                          {/* 文本框内容：代码用语法高亮渲染 */}
                           <div className="p-3 text-sm text-slate-100 overflow-x-auto">
                             <SyntaxHighlighter
                               language={lang}
@@ -568,8 +611,6 @@ export default function Chat() {
                   }
                   case "text": {
                     const text = part.text;
-
-                    // ================= 用户消息：保持原样 =================
                     if (message.role === "user") {
                       return (
                         <div
@@ -582,71 +623,16 @@ export default function Chat() {
                         </div>
                       );
                     }
-
-                    // ================= AI 消息：嵌入文本框 =================
                     return (
-                      <div
+                      <AIMessageText
                         key={`${message.id}-${i}`}
-                        className="whitespace-pre-wrap my-2 w-full max-w-3xl"
-                      >
-                        <div className="rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur-md">
-                          {/* 顶部菜单栏 */}
-                          <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
-                            <span className="text-xs font-mono text-cyan-400 uppercase">
-                              AI OUTPUT
-                            </span>
-
-                            <div className="flex items-center gap-1">
-                              {/* 🚨 复制按钮：加上 type="button" */}
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(text);
-                                    showToast("✅ Copied to clipboard");
-                                  } catch (err) {
-                                    showToast("❌ Copy failed");
-                                    console.error("复制失败", err);
-                                  }
-                                }}
-                                title="复制"
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                                复制
-                              </button>
-
-                              {/* 🚨 下载按钮：加上 type="button" */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const blob = new Blob([text], {
-                                    type: "text/plain;charset=utf-8",
-                                  });
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = `ai-output-${message.id}-${i}.txt`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  URL.revokeObjectURL(url);
-                                }}
-                                title="下载"
-                                className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                下载
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* 文本框内容：普通文本 + 代码块语法高亮 */}
-                          <div className="p-4 text-sm text-slate-100 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                            {renderRichText(text)}
-                          </div>
-                        </div>
-                      </div>
+                        text={text}
+                        isStreaming={
+                          message.id === lastMessage?.id &&
+                          status === "streaming"
+                        }
+                        onToast={showToast}
+                      />
                     );
                   }
 
@@ -679,16 +665,9 @@ export default function Chat() {
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          sendMessage({
-            text: input,
-          });
-          setInput("");
-        }}
+        onSubmit={handleSubmit}
         className="flex-shrink-0 w-full max-w-3xl mx-auto pb-[2px]"
       >
-        {/* 输入框 */}
         <textarea
           className="w-full p-3 min-h-[100px] max-h-[200px] resize-none overflow-y-auto border border-cyan-400/40 bg-slate-900/80 rounded-xl text-slate-100 placeholder-slate-400 shadow-[0_0_20px_rgba(34,211,238,0.25),inset_0_0_10px_rgba(34,211,238,0.1)] backdrop-blur-md outline-none transition-all duration-300 focus:border-cyan-300/80 focus:shadow-[0_0_30px_rgba(34,211,238,0.5),inset_0_0_15px_rgba(34,211,238,0.2)]"
           rows={4}
@@ -703,9 +682,7 @@ export default function Chat() {
           }}
         />
 
-        {/* 🚨 工具栏区域 */}
         <div className="flex items-center justify-between mt-3 px-1">
-          {/* 左侧功能区 */}
           <div className="flex items-center gap-2">
             {/* 1. DeepThink 开关 */}
             <Button
@@ -722,14 +699,13 @@ export default function Chat() {
               {deepThink ? "DeepThink On" : "DeepThink Off"}
             </Button>
 
-            {/* 2. Agent 模式选择 */}
+            {/* 2. System Prompt 选择 */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-600/60 transition-all">
                 <BookAIcon className="w-4 h-4 mr-1.5" />
                 {selectedSystemPrompt?.system_prompt_name ?? "System Prompt"}
                 <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
               </DropdownMenuTrigger>
-
               <DropdownMenuContent
                 align="start"
                 className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md"
@@ -739,19 +715,15 @@ export default function Chat() {
                     SYSTEM PROMPT
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
-
                 <DropdownMenuSeparator className="bg-cyan-400/20" />
-
                 {systemPrompts.map((sp) => (
                   <DropdownMenuItem
                     key={sp.id}
-                    onClick={() => {
-                      setSelectedSystemPrompt(sp);
-                    }}
+                    onClick={() => setSelectedSystemPrompt(sp)}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
                       selectedSystemPrompt?.id === sp.id
                         ? "bg-cyan-200/10 text-cyan-500"
-                        : "No Name"
+                        : ""
                     }`}
                   >
                     📜 {sp.system_prompt_name}
@@ -769,16 +741,7 @@ export default function Chat() {
               <Paperclip className="w-4 h-4" />
             </Button>
 
-            {/* 4. 粘贴图片 */}
-            {/* <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-cyan-600 hover:bg-cyan-500/10 rounded-lg border border-transparent hover:border-cyan-300/40"
-            >
-              <ImageIcon className="w-4 h-4" />
-            </Button> */}
-
-            {/* 5. 语音 */}
+            {/* 4. 语音 */}
             <Button
               variant="ghost"
               size="icon"
@@ -787,7 +750,7 @@ export default function Chat() {
               <Mic className="w-4 h-4" />
             </Button>
 
-            {/* 6. 联网搜索 */}
+            {/* 5. 联网搜索 */}
             <Button
               variant="ghost"
               size="icon"
@@ -795,14 +758,14 @@ export default function Chat() {
             >
               <Globe className="w-4 h-4" />
             </Button>
-            {/* 7. 模型选择下拉菜单 */}
+
+            {/* 6. 模型选择 */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
                 <Cpu className="w-4 h-4 mr-1.5" />
-                {model}
+                {selectedModel?.llm_model ?? "Select Model"}
                 <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-70" />
               </DropdownMenuTrigger>
-
               <DropdownMenuContent
                 align="start"
                 className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur-md"
@@ -812,20 +775,15 @@ export default function Chat() {
                     SELECT MODEL
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
-
                 <DropdownMenuSeparator className="bg-cyan-400/20" />
-
                 {models.map((m) => (
                   <DropdownMenuItem
                     key={m.id}
-                    onClick={() => {
-                      setSelectedModel(m);
-                      setModel(m.llm_model);
-                    }}
+                    onClick={() => setSelectedModel(m)}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
-                      model === m.llm_model
+                      selectedModel?.id === m.id
                         ? "bg-cyan-500/10 text-cyan-300"
-                        : "No Name"
+                        : ""
                     }`}
                   >
                     🚀 {m.llm_model}
@@ -835,7 +793,6 @@ export default function Chat() {
             </DropdownMenu>
           </div>
 
-          {/* 右侧发送按钮 */}
           <Button
             type="submit"
             className="h-8 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-semibold shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] transition-all"
@@ -847,7 +804,6 @@ export default function Chat() {
       </form>
 
       {showLoader && <div>Thinking...</div>}
-      {/* 🚨 自定义 Toast */}
       <div
         className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
           toast.visible

@@ -38,3 +38,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Design in progress
 
 ![alt text](image-1.png)
+
+Token usage daily for each user:
+
+![alt text](image-2.png)

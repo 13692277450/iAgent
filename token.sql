@@ -12,7 +12,7 @@
  Target Server Version : 160015 (160015)
  File Encoding         : 65001
 
- Date: 10/09/2026 18:57:18
+ Date: 13/09/2026 15:57:08
 */
 
 
@@ -28,12 +28,10 @@ MAXVALUE 9223372036854775807
 START 1
 CACHE 1
 ),
-  "daily" date,
-  "monthly" date,
-  "yearly" date,
-  "total" int8,
+  "date" date,
   "username" varchar(255) COLLATE "pg_catalog"."default",
-  "llm_model" varchar(255) COLLATE "pg_catalog"."default"
+  "llm_model" varchar(255) COLLATE "pg_catalog"."default",
+  "tokenusage" int8
 )
 ;
 

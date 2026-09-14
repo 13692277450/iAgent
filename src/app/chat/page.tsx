@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import Layout from "./pageLayout";
+import Layout from "./pageMainLayout";
 
 export default async function ChatPage() {
   console.log("ChatPage rendering...");
