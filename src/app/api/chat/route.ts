@@ -1,6 +1,7 @@
 
 import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
+import { buildMcpTools } from "@/lib/mcp_tools";
 import { ALL_TOOLS } from "@/lib/tools";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     llm_apiKey,
     llm_baseUrl,
     selectedSystemPrompt,
+    mcpServers
   }: {
     messages: UIMessage[];
     deepThink: boolean;
@@ -33,11 +35,19 @@ export async function POST(req: Request) {
     llm_apiKey?: string;
     llm_baseUrl?: string;
     selectedSystemPrompt?: string;
+    mcpServers: [];
+
+    
   } = await req.json();
 
   // 🚨 根据 baseUrl 判断用哪个 provider
   const systemPrompt = selectedSystemPrompt || "You are a smart assistant, you can answer any question.";
   const isDeepSeek = llm_baseUrl?.includes("deepseek");
+  const mcpTools = buildMcpTools(mcpServers as any);
+  const allTools = { ...ALL_TOOLS, ...mcpTools };
+
+  console.log("[TOOLS] 本次可用:", Object.keys(allTools));
+  // 期望输出: [TOOLS] 本次可用: ['render_output', 'weather'
   let result: any;
   if (isDeepSeek) {
     const provider = createDeepSeek({

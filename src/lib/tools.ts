@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 
 /**
- * render_output：把需要复制/下载的最终内容放进结构化文本框
+ * render_output：Put required content in a structured text box
  */
 export const renderOutputTool = tool({
   description:
@@ -26,7 +26,7 @@ export const renderOutputTool = tool({
 });
 
 /**
- * weather：查询指定地点的温度（华氏度）
+ * weather：Get the weather in a location (fahrenheit)
  */
 export const weatherTool = tool({
   description: "Get the weather in a location (fahrenheit)",
@@ -40,9 +40,10 @@ export const weatherTool = tool({
 });
 
 /**
- * 所有工具的集合，直接传给 streamText 的 tools 参数
+ * ALL_TOOLS：All available tools
  */
 export const ALL_TOOLS = {
   render_output: renderOutputTool,
   weather: weatherTool,
+
 };

@@ -13,9 +13,15 @@ export type McpServer = {
   name: string;
   description: string | null;
   connection_type: string;
+  connection_api: string;
+  auth_type: string;
+  auth_config: string;
   status: string;
+  last_error: string | null;
+  permission: string;
   enabled: boolean;
   tools: unknown;
+  created_at: Date;
 };
 
 type McpContextValue = {

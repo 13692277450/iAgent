@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 "use client";
+import { useMcp } from "@/components/mcp_provider";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useChat } from "@ai-sdk/react";
@@ -380,6 +381,8 @@ const AIMessageText = memo(function AIMessageText({
 });
 
 export default function Chat() {
+  const { selected } = useMcp();
+
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
     message: "",
     visible: false,
@@ -450,7 +453,7 @@ export default function Chat() {
         const defaultModel = list.find((m) => m.is_default) ?? list[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
-          log("default model: ", defaultModel);
+          log("default model: ", defaultModel.llm_model);
         }
       })
       .catch((err) => log("Failed to fetch models", err));
@@ -490,7 +493,7 @@ export default function Chat() {
     }
     log("=== Submission Parameters ===", {
       deepThink,
-      llm_model: selectedModel.llm_model,
+      model: selectedModel.llm_model,
       llm_baseUrl: selectedModel.llm_baseUrl,
       systemPrompt: selectedSystemPrompt?.system_prompt_name,
     });
@@ -503,6 +506,15 @@ export default function Chat() {
           llm_apiKey: selectedModel.llm_apiKey,
           llm_baseUrl: selectedModel.llm_baseUrl,
           llm_model: selectedModel.llm_model,
+          mcpServers: selected.map((s) => ({
+            id: s.id,
+            name: s.name,
+            connection_type: s.connection_type,
+            connection_api: s.connection_api,
+            auth_type: s.auth_type,
+            auth_config: s.auth_config,
+            tools: s.tools,
+          })),
         },
       },
     );
@@ -727,7 +739,12 @@ export default function Chat() {
                 {systemPrompts.map((sp) => (
                   <DropdownMenuItem
                     key={sp.id}
-                    onClick={() => setSelectedSystemPrompt(sp)}
+                    onClick={() => {
+                      setSelectedSystemPrompt(sp);
+                      log(
+                        `System prompt name: ${sp.system_prompt_name} & Content: ${sp.system_prompt_content}`,
+                      );
+                    }}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
                       selectedSystemPrompt?.id === sp.id
                         ? "bg-cyan-200/10 text-cyan-500"
