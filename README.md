@@ -43,3 +43,10 @@ Design in progress
 Token usage daily for each user:
 
 ![alt text](image-2.png)
+
+Logs and MCP server 
+
+![alt text](image-4.png)
+
+MCP Server option
+![alt text](image-3.png)
