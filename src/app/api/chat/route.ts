@@ -12,6 +12,7 @@ import {
   toUIMessageStream,
   UIMessage,
 } from "ai";
+import { log } from "next/dist/server/typescript/utils";
 import { z } from "zod";
 
 export async function POST(req: Request) {
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
       tools: ALL_TOOLS,
 
       onFinish: async ({ usage, text }) => {
-        console.log("========== usage 原始对象 ==========");
+        console.log("========== usage object ==========");
         console.log(JSON.stringify(usage, null, 2));
       try {
         await pool.query(
@@ -71,14 +72,15 @@ export async function POST(req: Request) {
             usage.totalTokens ?? 0,
           ]
         );
-        console.log("&&&&&&&&&&token usage:", usage.inputTokenDetails)
+        log("Token prompt usage:" + usage.inputTokens)
+        log("Token completion usage:" + usage.outputTokens)
       } catch (err) {
-        console.error("Failed to record token usage:", err);
+        log("Failed to record token usage:" + err);
       }
     },
     });
   } else {
-    // 通义千问、Kimi 等 OpenAI 兼容接口
+    // Deepseek or Kimi interface
     const provider = createOpenAICompatible({
       name: "custom",
       apiKey: llm_apiKey || process.env.ALI_API_KEY!,
@@ -89,7 +91,7 @@ export async function POST(req: Request) {
       model: provider(llm_model || "qwen3.7-flash"),
       providerOptions: {
         custom: {
-          // 通义千问的思考模式参数
+          // Deeping thinking mode
           enable_thinking: deepThink,
         },
       },
@@ -110,9 +112,10 @@ export async function POST(req: Request) {
             usage.totalTokens ?? 0,
           ]
         );
-        console.log("&&&&&&&&&&token usage:", usage.inputTokenDetails)
+        log("Token prompt usage:" + usage.inputTokens)
+        log("Token completion usage:" + usage.outputTokens)
       } catch (err) {
-        console.error("Failed to record token usage:", err);
+        log("Failed to record token usage:" + err);
       }
     },
     });

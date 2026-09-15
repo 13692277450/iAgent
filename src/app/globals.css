@@ -188,3 +188,30 @@ code[class*="language-"] {
 pre[class*="language-"]>code>span {
   background: transparent !important;
 }
+
+/* 通用：给所有 overflow-y-auto 的元素一个可见的滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  /* slate-900 半透明 */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.4);
+  /* cyan-400 半透明 */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.7);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.4) rgba(15, 23, 42, 0.5);
+}

@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { setSession } from "@/lib/auth";
-
+import {log} from "@/lib/logger"
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json(
-        { error: "账号和密码不能为空" },
+        { error: "Username or password can't be empty" },
         { status: 400 },
       );
     }
 
-   // 3. 查询账号（统一转小写，防止大小写问题）
+   // 3. Query account（Convert username to lowercase to prevent case sensitivity issue）
     const normalizedUsername = String(username).trim().toLowerCase();
     const result = await pool.query(
       `SELECT id, username, password, islocker 
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     if (result.rows.length === 0) {
       return NextResponse.json(
-        { error: "账号或密码错误" },
+        { error: "Username or password is incorrect" },
         { status: 401 }
       );
     }
@@ -32,25 +32,26 @@ export async function POST(req: Request) {
 
     const account = result.rows[0];
 
-    // 2. 检查是否被锁定
+    // 2. Check account is locked
     if (account.islocker === true) {
+      log("Account is locked, please contact the administrator");
       return NextResponse.json(
-        { error: "账号被锁定，请联系管理员" },
+        { error: "Account is locked, please contact the administrator" },
         { status: 403 },
       );
     }
 
-    // 3. 校验密码（这里演示用明文比较，生产环境务必用 bcrypt 哈希）
+    // 3. Verify password
     if (account.password !== password) {
-      return NextResponse.json({ error: "账号或密码错误" }, { status: 401 });
+      return NextResponse.json({ error: "Username or password is incorrect" }, { status: 401 });
     }
 
-    // 4. 写入 session cookie
+    // 4. Set session cookie
     await setSession(account.username);
 
     return NextResponse.json({ success: true, username: account.username });
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json({ error: "服务器错误" }, { status: 500 });
+    return NextResponse.json({ error: "Server error, please try again later" }, { status: 500 });
   }
 }

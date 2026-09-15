@@ -18,9 +18,9 @@ export function TokenCalendarDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[700px] bg-white border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.25)] backdrop-blur-md">
         <DialogHeader>
-          <DialogTitle className="text-lg">TOKEN INFORMATION</DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
-            Check Token usage daily for each user
+          <DialogTitle className="text-lg">TOKEN USAGE</DialogTitle>
+          <DialogDescription className="text-md font-bold text-slate-500">
+            {/* Token usage */}
           </DialogDescription>
         </DialogHeader>
         <TokenCalendarContent />

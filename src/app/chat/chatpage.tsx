@@ -27,8 +27,9 @@ import {
 import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
+import { log, error } from "@/lib/logger";
 
-// ==================== 类型 ====================
+// ==================== LLM Models ====================
 type LLMModel = {
   id: number;
   llm_name: string;
@@ -46,7 +47,7 @@ type SystemPrompt = {
   is_default: boolean;
 };
 
-// ==================== 语言映射 ====================
+// ==================== Language Mapping ====================
 const CODE_LANG_ALIASES: Record<string, string> = {
   py: "python",
   js: "javascript",
@@ -270,23 +271,23 @@ function BoxActions({
             onToast("✅ Copied to clipboard");
           } catch (err) {
             onToast("❌ Copy failed");
-            console.error("复制失败", err);
+            console.error("Copy failed", err);
           }
         }}
-        title="复制"
+        title="COPY"
         className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
       >
         <Copy className="w-3.5 h-3.5" />
-        复制
+        COPY
       </button>
       <button
         type="button"
         onClick={() => downloadText(content, filename)}
-        title="下载"
+        title="DOWNLOAD"
         className="flex items-center gap-1 px-2 py-1 text-xs text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/10 rounded transition-colors"
       >
         <Download className="w-3.5 h-3.5" />
-        下载
+        DOWNLOAD
       </button>
     </div>
   );
@@ -384,6 +385,7 @@ export default function Chat() {
     visible: false,
   });
 
+  //====================== Show Toast ====================
   const showToast = (message: string) => {
     setToast({ message, visible: true });
     setTimeout(() => {
@@ -396,14 +398,16 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [deepThink, setDeepThink] = useState(false);
 
+  // ==================== System Prompts ====================
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [selectedSystemPrompt, setSelectedSystemPrompt] =
     useState<SystemPrompt | null>(null);
 
+  // ==================== LLM Models ====================
   const [models, setModels] = useState<LLMModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
 
-  // 🚨 useChat 的 body 不再放动态值，统一在 sendMessage 里传
+  // 🚨 useChat's body in sendMessage instead to transfer
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -412,7 +416,7 @@ export default function Chat() {
 
   const lastMessage = messages[messages.length - 1];
 
-  // ==================== 拉取 System Prompts ====================
+  // ==================== Fetch System Prompts ====================
   useEffect(() => {
     let cancelled = false;
     fetch("/api/system_prompts")
@@ -424,16 +428,17 @@ export default function Chat() {
         const defaultPrompt = list.find((sp) => sp.is_default) ?? list[0];
         if (defaultPrompt) {
           setSelectedSystemPrompt(defaultPrompt);
+          log("default prompt: ", defaultPrompt);
         }
       })
-      .catch((err) => console.error("Failed to fetch system prompts", err));
+      .catch((err) => log("Failed to fetch system prompts", err));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // ==================== 拉取 LLM 模型 ====================
-  // 🚨 加 cancelled 标记：防止请求慢返回时把用户已经切换的选择覆盖回默认值
+  // ==================== Fetch LLM Models ====================
+  // 🚨 add cancelled marked: to protect from default selection override default
   useEffect(() => {
     let cancelled = false;
     fetch("/api/llm")
@@ -445,16 +450,16 @@ export default function Chat() {
         const defaultModel = list.find((m) => m.is_default) ?? list[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
-          console.log("default model: ", defaultModel);
+          log("default model: ", defaultModel);
         }
       })
-      .catch((err) => console.error("Failed to fetch models", err));
+      .catch((err) => log("Failed to fetch models", err));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // ==================== 自动滚动到底部 ====================
+  // ==================== Auto Scroll to Bottom ====================
   useEffect(() => {
     const el = messagesScrollRef.current;
     if (el && messages.length > 0) {
@@ -473,17 +478,17 @@ export default function Chat() {
     }
   };
 
-  // ==================== 提交 ====================
+  // ==================== Submission ====================
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedModel) {
-      showToast("❌ 请先选择模型");
+      showToast("❌ Please select a model");
       return;
     }
     if (!input.trim()) {
       return;
     }
-    console.log("=== 提交参数 ===", {
+    log("=== Submission Parameters ===", {
       deepThink,
       llm_model: selectedModel.llm_model,
       llm_baseUrl: selectedModel.llm_baseUrl,
@@ -644,7 +649,7 @@ export default function Chat() {
                     return (
                       <div key={`${message.id}-${i}`}>
                         <div className="font-bold text-cyan-400">
-                          温度查询结果
+                          WEATHER QUERY RESULTS
                         </div>
                         <div>📍Location: {location}</div>
                         <div className="text-slate-100">
@@ -666,10 +671,10 @@ export default function Chat() {
 
       <form
         onSubmit={handleSubmit}
-        className="flex-shrink-0 w-full max-w-3xl mx-auto pb-[2px]"
+        className="flex-shrink-0 w-full max-w-3xl mx-auto pb-[2px] bg-slate-950 rounded-xl"
       >
         <textarea
-          className="w-full p-3 min-h-[100px] max-h-[200px] resize-none overflow-y-auto border border-cyan-400/40 bg-slate-900/80 rounded-xl text-slate-100 placeholder-slate-400 shadow-[0_0_20px_rgba(34,211,238,0.25),inset_0_0_10px_rgba(34,211,238,0.1)] backdrop-blur-md outline-none transition-all duration-300 focus:border-cyan-300/80 focus:shadow-[0_0_30px_rgba(34,211,238,0.5),inset_0_0_15px_rgba(34,211,238,0.2)]"
+          className="w-full p-3 min-h-[100px] max-h-[200px] resize-none overflow-y-auto border border-cyan-400/40 bg-slate-950 rounded-xl text-slate-100 placeholder-slate-400 shadow-[0_0_20px_rgba(34,211,238,0.25),inset_0_0_10px_rgba(34,211,238,0.1)] backdrop-blur-md outline-none transition-all duration-300 focus:border-cyan-300/80 focus:shadow-[0_0_30px_rgba(34,211,238,0.5),inset_0_0_15px_rgba(34,211,238,0.2)]"
           rows={4}
           value={input}
           placeholder="Say something..."
@@ -684,14 +689,17 @@ export default function Chat() {
 
         <div className="flex items-center justify-between mt-3 px-1">
           <div className="flex items-center gap-2">
-            {/* 1. DeepThink 开关 */}
+            {/* 1. DeepThink Switch */}
             <Button
               variant="ghost"
               type="button"
-              onClick={() => setDeepThink(!deepThink)}
+              onClick={() => {
+                setDeepThink(!deepThink);
+                log(`DeepThink switched: ${!deepThink}`);
+              }}
               className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                 deepThink
-                  ? "bg-cyan-500/30 text-cyan-700 border-cyan-600/80 shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:bg-cyan-500/40"
+                  ? "bg-cyan-500/30 text-cyan-400 border-cyan-600/80 shadow-[0_0_15px_rgba(34,211,238,0.6)] hover:bg-cyan-500/40"
                   : "bg-slate-900/60 text-slate-100 border-cyan-400/20 hover:bg-cyan-500/10 hover:border-cyan-200/40"
               }`}
             >
@@ -699,7 +707,7 @@ export default function Chat() {
               {deepThink ? "DeepThink On" : "DeepThink Off"}
             </Button>
 
-            {/* 2. System Prompt 选择 */}
+            {/* 2. System Prompt Selection */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-600/60 transition-all">
                 <BookAIcon className="w-4 h-4 mr-1.5" />
@@ -732,7 +740,7 @@ export default function Chat() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* 3. 附件 */}
+            {/* 3. Attachment Upload */}
             <Button
               variant="ghost"
               size="icon"
@@ -741,7 +749,7 @@ export default function Chat() {
               <Paperclip className="w-4 h-4" />
             </Button>
 
-            {/* 4. 语音 */}
+            {/* 4. Voice Input */}
             <Button
               variant="ghost"
               size="icon"
@@ -750,7 +758,7 @@ export default function Chat() {
               <Mic className="w-4 h-4" />
             </Button>
 
-            {/* 5. 联网搜索 */}
+            {/* 5. Internet Search */}
             <Button
               variant="ghost"
               size="icon"
@@ -759,7 +767,7 @@ export default function Chat() {
               <Globe className="w-4 h-4" />
             </Button>
 
-            {/* 6. 模型选择 */}
+            {/* 6. Model Selection */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
                 <Cpu className="w-4 h-4 mr-1.5" />

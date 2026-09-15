@@ -1,6 +1,8 @@
 // src/components/token-calendar-content.tsx
 "use client";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
+import { useLogs } from "@/hooks/use-logs";
+import { log } from "next/dist/server/typescript/utils";
 import { useState, useEffect } from "react";
 
 export function TokenCalendarContent() {
@@ -20,7 +22,7 @@ export function TokenCalendarContent() {
         }
       } catch (err) {
         if ((err as any)?.name === "AbortError") return;
-        console.error("Failed to fetch token usage", err);
+        log("Failed to fetch token usage");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -60,13 +62,13 @@ export function TokenCalendarContent() {
       {/* 汇总数字 */}
       <div className="text-sm text-slate-500 space-y-1">
         <div>
-          Token Usage Total In This Month:{" "}
+          Token usage total in this month:{" "}
           <span className="font-bold text-orange-700">
             {loading ? "loading..." : monthTotal.toLocaleString()}
           </span>
         </div>
         <div className="text-blue-500">
-          Yearly Token Usage Total:{" "}
+          Token usage total in one year:{" "}
           <span className="text-orange-700 font-bold">
             {loading ? "loading..." : yearTotal.toLocaleString()}
           </span>

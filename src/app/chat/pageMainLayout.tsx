@@ -3,12 +3,13 @@ import Chat from "./chatpage";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarIcon } from "lucide-react";
-import Link from "next/link";
 import { TokenCalendarDialog } from "./dialogTokenUsageUI";
+import { LogCard } from "./pageLogs";
+import { McpServerDialog } from "./pageMCPServersDialog";
+import { McpProvider } from "@/components/mcp_provider";
+import { McpSelectedCard } from "./pageMCPServers";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,7 @@ export default function Layout() {
             onClick={handleLogout}
             className="h-8 px-3 rounded-lg text-xs text-slate-400 hover:text-red-400"
           >
-            登出
+            LOGOUT
           </Button>
         </div>
       </div>
@@ -84,35 +85,16 @@ export default function Layout() {
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600">
-                SCP SERVER
+                SCP SERVERS
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-500 text-green-600">
-              ONLINE SERVERS
-              <div className="mt-4 space-y-2">
-                {["Item 1", "Item 2", "Item 3"].map((item) => (
-                  <div
-                    key={item}
-                    className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
+              <McpProvider>
+                <McpSelectedCard />
+              </McpProvider>
+              <div className="mt-4 space-y-2"></div>
             </CardContent>
-            <CardContent className="text-sm text-slate-500 text-red-600">
-              OFFLINE SERVERS
-              <div className="mt-4 space-y-2">
-                {["Item 1", "Item 2", "Item 3"].map((item) => (
-                  <div
-                    key={item}
-                    className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+            <CardContent className="text-sm text-slate-500 text-red-600"></CardContent>
           </Card>
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
@@ -180,27 +162,34 @@ export default function Layout() {
               Token Usage Diary
             </span>
           </Link> */}
+
           <Card>
             <Button
-              className="w-full inset-shadow-card-foreground bg-white-400/30 text-cyanblue-200 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all"
+              className="w-full inset-shadow-card-foreground bg-white-400/30 text-cyanblue-200 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all mb-3"
               onClick={() => setOpen(true)}
             >
               TOKEN USAGE VIEW
             </Button>
             <TokenCalendarDialog open={open} onOpenChange={setOpen} />
           </Card>
+          <div>
+            <div className="h-px mx-4 bg-cyan-400/20 shrink-0 mb-3" />
+            <p /> 📊 Running Logs <p />
+            <LogCard />
+          </div>
+          <div className="h-px mx-4 bg-cyan-400/20 shrink-0 mb-3" />
 
-          <Card className="bg-white shadow-none border-none">
+          {/* <Card className="bg-white shadow-none border-none">
             <CardHeader>
-              <CardTitle className="text-lg">LOG PANEL</CardTitle>
+              <CardTitle className="text-lg">LOGS PANEL</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-500">
-              RUNNING LOGS
-              <div className="mt-4 p-3 bg-blue-50 rounded-md text-blue-700">
-                📊 LOGS...
+              <div className="mt-4 p-3 bg-blue-50 rounded-md text-blue-700 height-[300px] overflow-y-auto">
+                📊 Running Logs
+                <LogCard />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
