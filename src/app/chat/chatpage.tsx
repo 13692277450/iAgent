@@ -5,7 +5,7 @@ import { useMcp } from "@/components/mcp_provider";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useState, useRef, memo } from "react";
+import { useEffect, useState, useRef, memo, useMemo } from "react";
 import {
   BrainCircuit,
   Paperclip,
@@ -28,7 +28,7 @@ import {
 import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
-import { log, error } from "@/lib/logger";
+import { log } from "@/lib/logger";
 
 // ==================== LLM Models ====================
 type LLMModel = {
@@ -388,7 +388,6 @@ export default function Chat() {
     visible: false,
   });
 
-  //====================== Show Toast ====================
   const showToast = (message: string) => {
     setToast({ message, visible: true });
     setTimeout(() => {
@@ -410,12 +409,37 @@ export default function Chat() {
   const [models, setModels] = useState<LLMModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
 
-  // 🚨 useChat's body in sendMessage instead to transfer
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-    }),
-  });
+  // ==================== Transport（body 用函数形式，每次请求取最新值）====================
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: () => {
+          const body = {
+            deepThink,
+            selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
+            llm_apiKey: selectedModel?.llm_apiKey,
+            llm_baseUrl: selectedModel?.llm_baseUrl,
+            llm_model: selectedModel?.llm_model,
+            mcpServers: selected.map((s) => ({
+              id: s.id,
+              name: s.name,
+              connection_type: s.connection_type,
+              connection_api: s.connection_api,
+              auth_type: s.auth_type,
+              auth_config: s.auth_config,
+              tools: s.tools,
+            })),
+          };
+          log("[TRANSPORT] 实际发送 body:", body);
+          return body;
+        },
+      }),
+    [deepThink, selectedModel, selectedSystemPrompt, selected],
+  );
+
+  // 🚨 useChat 用 memo 化的 transport，sendMessage 不再传 body
+  const { messages, sendMessage, status } = useChat({ transport });
 
   const lastMessage = messages[messages.length - 1];
 
@@ -441,7 +465,6 @@ export default function Chat() {
   }, []);
 
   // ==================== Fetch LLM Models ====================
-  // 🚨 add cancelled marked: to protect from default selection override default
   useEffect(() => {
     let cancelled = false;
     fetch("/api/llm")
@@ -496,28 +519,11 @@ export default function Chat() {
       model: selectedModel.llm_model,
       llm_baseUrl: selectedModel.llm_baseUrl,
       systemPrompt: selectedSystemPrompt?.system_prompt_name,
+      mcpServers: selected.map((s) => s.name),
     });
-    sendMessage(
-      { text: input },
-      {
-        body: {
-          deepThink,
-          selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
-          llm_apiKey: selectedModel.llm_apiKey,
-          llm_baseUrl: selectedModel.llm_baseUrl,
-          llm_model: selectedModel.llm_model,
-          mcpServers: selected.map((s) => ({
-            id: s.id,
-            name: s.name,
-            connection_type: s.connection_type,
-            connection_api: s.connection_api,
-            auth_type: s.auth_type,
-            auth_config: s.auth_config,
-            tools: s.tools,
-          })),
-        },
-      },
-    );
+
+    // 🚨 只传 message，body 在 transport 里
+    sendMessage({ text: input });
     setInput("");
   };
 
@@ -741,9 +747,7 @@ export default function Chat() {
                     key={sp.id}
                     onClick={() => {
                       setSelectedSystemPrompt(sp);
-                      log(
-                        `System prompt name: ${sp.system_prompt_name} & Content: ${sp.system_prompt_content}`,
-                      );
+                      log(`System prompt name: ${sp.system_prompt_name}`);
                     }}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
                       selectedSystemPrompt?.id === sp.id

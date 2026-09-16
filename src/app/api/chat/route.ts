@@ -47,6 +47,11 @@ export async function POST(req: Request) {
   const allTools = { ...ALL_TOOLS, ...mcpTools };
 
   console.log("[TOOLS] 本次可用:", Object.keys(allTools));
+  // log(`[TOOLS] 本次可用: ${Object.keys(allTools)}`);
+  // 🚨 调试：看前端到底传了什么
+  console.log("[CHAT] body.mcpServers:", mcpServers);
+  console.log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
+  console.log("[CHAT] 完整 body:", JSON.stringify(req, null, 2));
   // 期望输出: [TOOLS] 本次可用: ['render_output', 'weather'
   let result: any;
   if (isDeepSeek) {
@@ -65,10 +70,10 @@ export async function POST(req: Request) {
       system: systemPrompt,  //  system prompt
       messages: await convertToModelMessages(messages),
       tools: ALL_TOOLS,
-
       onFinish: async ({ usage, text }) => {
         console.log("========== usage object ==========");
         console.log(JSON.stringify(usage, null, 2));
+        log(`All Tools: ${ALL_TOOLS}`);
       try {
         await pool.query(
           `INSERT INTO public.token 
@@ -109,6 +114,9 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(messages),
       tools: ALL_TOOLS,
       onFinish: async ({ usage, text }) => {
+      log(`All Tools: ${ALL_TOOLS}`);
+      console.log(`All Tools: ${ALL_TOOLS}`)
+
       try {
         await pool.query(
           `INSERT INTO public.token 
