@@ -54,6 +54,7 @@ export function TokenCalendarContent() {
       return y === ref.getFullYear();
     })
     .reduce((sum, [, v]) => sum + v, 0);
+  const [month, setMonth] = useState<Date>(new Date());
 
   return (
     <div className="space-y-5">
@@ -83,58 +84,23 @@ export function TokenCalendarContent() {
           mode="single"
           selected={date}
           onSelect={setDate}
-          className="w-full bg-transparent text-slate-100"
-          classNames={{
-            months: "flex flex-col",
-            month: "space-y-4",
-            month_caption: "flex justify-center pt-1 relative items-center",
-            caption_label:
-              "text-base font-mono text-cyan-300 tracking-wide font-semibold",
-            nav: "space-x-2 flex items-center",
-            button_previous:
-              "h-8 w-8 bg-transparent p-0 text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/20 rounded-md transition-colors absolute left-1",
-            button_next:
-              "h-8 w-8 bg-transparent p-0 text-cyan-300 hover:text-cyan-100 hover:bg-cyan-500/20 rounded-md transition-colors absolute right-1",
-            month_grid: "w-full border-collapse",
-            weekdays: "flex",
-            weekday:
-              "text-slate-400 rounded-md w-11 font-mono text-xs uppercase font-semibold",
-            week: "flex w-full mt-1",
-            day: "h-11 w-11 text-center text-sm p-0 relative",
-            day_button:
-              "h-11 w-11 p-0 font-normal text-slate-100 hover:bg-cyan-500/15 hover:text-cyan-100 rounded-md transition-colors",
-            selected:
-              "bg-white text-slate-900 font-semibold border-2 border-white hover:bg-slate-100",
-            today:
-              "bg-slate-800 text-cyan-200 font-semibold border border-cyan-400/40",
-            outside: "text-slate-500 opacity-50",
-            disabled: "text-slate-600 opacity-30",
-            hidden: "invisible",
-          }}
+          month={month}
+          onMonthChange={setMonth}
+          captionLayout="dropdown"
+          startMonth={new Date(2020, 0)} // 2020年1月
+          endMonth={new Date(2030, 11)} // 2030年12月
+          className="w-full rounded-lg border text-base"
           components={{
             DayButton: (props) => {
               const usage = getTokenForDate(props.day.date);
               return (
                 <CalendarDayButton
                   {...props}
-                  className="
-            !h-11 !w-11
-            group
-            hover:bg-cyan-500/15
-            data-[selected=true]:bg-white
-            data-[selected=true]:text-slate-900
-            data-[selected=true]:border-2
-            data-[selected=true]:border-white
-            data-[selected=true]:font-semibold
-            rounded-md transition-colors
-            flex flex-col items-center justify-center gap-0.5
-          "
+                  className="hover:bg-orange-200/60 data-[selected=true]:bg-cyan-500/30 data-[selected=true]:text-cyan-400/60 data-[selected=true]:border-cyan-400/50 rounded-md transition-colors"
                 >
-                  <span className="text-base leading-none font-medium">
-                    {props.children}
-                  </span>
+                  <span>{props.children}</span>
                   {usage !== undefined && (
-                    <span className="text-xs leading-none font-semibold font-mono text-cyan-300 group-data-[selected=true]:text-slate-700">
+                    <span className="text-[14px] leading-none text-orange-600 font-semibold">
                       {usage >= 1000 ? `${(usage / 1000).toFixed(1)}k` : usage}
                     </span>
                   )}

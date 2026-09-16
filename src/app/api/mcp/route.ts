@@ -32,7 +32,7 @@ export async function GET() {          // 👈 必须有 GET
        FROM public.mcp_server
        ORDER BY name ASC`,
     );
-    console.log("[MCP] 本次查询数据库Get:", rows);
+    // console.log("[MCP] 本次查询数据库Get:", rows);
     return NextResponse.json({ servers: rows });
   } catch (err) {
     console.error("Failed to fetch mcp servers:", err);

@@ -50,3 +50,7 @@ Logs and MCP server
 
 MCP Server option
 ![alt text](image-3.png)
+
+2026-09-16 UI update, Add MCP server option, Add skills selected card
+
+![alt text](image-5.png)

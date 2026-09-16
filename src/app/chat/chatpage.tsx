@@ -566,7 +566,7 @@ export default function Chat() {
         ref={messagesScrollRef}
         className="flex-1 min-h-0 overflow-y-auto w-full chat-scroll"
       >
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full max-w-5xl mx-auto">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -586,10 +586,7 @@ export default function Chat() {
                 switch (part.type) {
                   case "reasoning": {
                     return (
-                      <div
-                        key={`${message.id}-${i}`}
-                        className="w-full max-w-3xl my-2"
-                      >
+                      <div key={`${message.id}-${i}`} className="w-full my-2">
                         <details className="rounded-lg border border-gray-800/30 bg-black-750/20 backdrop-blur-md overflow-hidden">
                           <summary className="px-3 py-2 text-xs text-blue-600 cursor-pointer hover:bg-purple-500/10 transition-colors">
                             💬 AI DeepThinking
@@ -610,10 +607,7 @@ export default function Chat() {
                     const lang = resolveCodeLang(rawLang, filename);
 
                     return (
-                      <div
-                        key={`${message.id}-${i}`}
-                        className="w-full max-w-3xl my-2"
-                      >
+                      <div key={`${message.id}-${i}`} className="w-full my-2">
                         <div className="rounded-lg border border-cyan-400/30 bg-slate-950/80 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur-md">
                           <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-cyan-400/20">
                             <span className="text-xs font-mono text-cyan-400 uppercase">
@@ -625,7 +619,7 @@ export default function Chat() {
                               onToast={showToast}
                             />
                           </div>
-                          <div className="p-3 text-sm text-slate-100 overflow-x-auto">
+                          <div className="p-3 text-sm text-slate-100 overflow-x-auto overflow-y-auto">
                             <SyntaxHighlighter
                               language={lang}
                               style={oneDark}
@@ -652,7 +646,7 @@ export default function Chat() {
                           key={`${message.id}-${i}`}
                           onClick={() => handleUserMessageClick(message)}
                           title="Click copy text to input area"
-                          className="whitespace-pre-wrap my-2 px-4 py-3 rounded-xl border backdrop-blur-md transition-all duration-300 w-full max-w-2xl bg-gradient-to-br from-cyan-400/20 to-orange-100/10 text-blue border-green-700/50 shadow-[0_0_15px_rgba(61,124,196,0.4),inset_0_0_10px_rgba(255,215,0,0.1)] hover:border-yellow-100/60 hover:shadow-[0_0_20px_rgba(255,215,0,0.6)] cursor-pointer"
+                          className="whitespace-pre-wrap my-2 px-4 py-3 rounded-xl border backdrop-blur-md transition-all duration-300 w-full max-w-3xl bg-gradient-to-br from-cyan-400/20 to-orange-100/10 text-blue border-green-700/50 shadow-[0_0_15px_rgba(61,124,196,0.4),inset_0_0_10px_rgba(255,215,0,0.1)] hover:border-yellow-100/60 hover:shadow-[0_0_20px_rgba(255,215,0,0.6)] cursor-pointer"
                         >
                           {text}
                         </div>
@@ -701,7 +695,7 @@ export default function Chat() {
 
       <form
         onSubmit={handleSubmit}
-        className="flex-shrink-0 w-full max-w-3xl mx-auto pb-[2px] bg-slate-950 rounded-xl"
+        className="flex-shrink-0 w-full max-w-5xl mx-auto pb-[2px] bg-slate-950 rounded-xl"
       >
         <textarea
           className="w-full p-3 min-h-[100px] max-h-[200px] resize-none overflow-y-auto border border-cyan-400/40 bg-slate-950 rounded-xl text-slate-100 placeholder-slate-400 shadow-[0_0_20px_rgba(34,211,238,0.25),inset_0_0_10px_rgba(34,211,238,0.1)] backdrop-blur-md outline-none transition-all duration-300 focus:border-cyan-300/80 focus:shadow-[0_0_30px_rgba(34,211,238,0.5),inset_0_0_15px_rgba(34,211,238,0.2)]"
