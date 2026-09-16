@@ -439,7 +439,19 @@ export default function Chat() {
   );
 
   // 🚨 useChat 用 memo 化的 transport，sendMessage 不再传 body
-  const { messages, sendMessage, status } = useChat({ transport });
+  const { messages, sendMessage, status } = useChat({
+    transport,
+    onData: (dataPart) => {
+      if (dataPart.type === "data-log") {
+        const data = dataPart.data as {
+          level: string;
+          text: string;
+          time: string;
+        };
+        log(data.text);
+      }
+    },
+  });
 
   const lastMessage = messages[messages.length - 1];
 
@@ -455,7 +467,7 @@ export default function Chat() {
         const defaultPrompt = list.find((sp) => sp.is_default) ?? list[0];
         if (defaultPrompt) {
           setSelectedSystemPrompt(defaultPrompt);
-          log("Default system prompt: ", defaultPrompt.system_prompt_content);
+          log("[Default system prompt]: ", defaultPrompt.system_prompt_content);
         }
       })
       .catch((err) => log("Failed to fetch system prompts", err));
@@ -476,7 +488,7 @@ export default function Chat() {
         const defaultModel = list.find((m) => m.is_default) ?? list[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
-          log("Default model: ", defaultModel.llm_model);
+          log("[Default model]: ", defaultModel.llm_model);
         }
       })
       .catch((err) => log("Failed to fetch models", err));
@@ -514,7 +526,7 @@ export default function Chat() {
     if (!input.trim()) {
       return;
     }
-    log("=== Submission Parameters ===", {
+    log("[=== Submission Parameters ===]", {
       deepThink,
       model: selectedModel.llm_model,
       llm_baseUrl: selectedModel.llm_baseUrl,
@@ -747,7 +759,9 @@ export default function Chat() {
                     key={sp.id}
                     onClick={() => {
                       setSelectedSystemPrompt(sp);
-                      log(`System prompt name: ${sp.system_prompt_name}`);
+                      log(
+                        `System prompt name: ${sp.system_prompt_name} & Content: ${sp.system_prompt_content}`,
+                      );
                     }}
                     className={`cursor-pointer text-xs outline-none transition-colors focus:bg-cyan-500/20 focus:text-cyan-100 ${
                       selectedSystemPrompt?.id === sp.id

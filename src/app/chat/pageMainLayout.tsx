@@ -174,7 +174,7 @@ export default function Layout() {
           </Card>
           <div>
             <div className="h-px mx-4 bg-cyan-400/20 shrink-0 mb-3" />
-            <p /> 📊 Running Logs <p />
+            {/* <p /> 📊 Running Logs <p /> */}
             <LogCard />
           </div>
           <div className="h-px mx-4 bg-cyan-400/20 shrink-0 mb-3" />
