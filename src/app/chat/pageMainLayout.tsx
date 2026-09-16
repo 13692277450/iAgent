@@ -89,9 +89,9 @@ export default function Layout() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-500 text-green-600"> */}
-          <McpProvider>
-            <McpSelectedCard />
-          </McpProvider>
+          {/* <McpProvider> */}
+          <McpSelectedCard />
+          {/* </McpProvider> */}
           {/* <div className="mt-4 space-y-2"></div>
             </CardContent>
             <CardContent className="text-sm text-slate-500 text-red-600"></CardContent>

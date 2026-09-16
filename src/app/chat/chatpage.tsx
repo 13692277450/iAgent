@@ -431,7 +431,7 @@ export default function Chat() {
               tools: s.tools,
             })),
           };
-          log("[TRANSPORT] 实际发送 body:", body);
+          // log("[TRANSPORT] 实际发送 body:", body);
           return body;
         },
       }),

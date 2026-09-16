@@ -74,6 +74,7 @@ async function callMcpServer(
         cwd,
         env: { ...process.env, ...env },
         stdio: ["pipe", "pipe", "pipe"],
+        shell: true
       });
 
       return await new Promise((resolve, reject) => {

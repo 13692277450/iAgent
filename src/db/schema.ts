@@ -17,7 +17,7 @@ export const mcpServer = pgTable("mcp_server", {
   enabled:     boolean("enabled").notNull().default(false),
   tools:       jsonb("tools").notNull().default([]),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [
+}, (t:any) => [
   uniqueIndex("uniq_mcp_server_name").on(t.name),
   index("idx_mcp_server_status").on(t.status),
   check("chk_mcp_status", sql`${t.status} IN ('unknown','connected','error','disabled')`),
