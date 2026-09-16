@@ -431,7 +431,7 @@ export default function Chat() {
         const defaultPrompt = list.find((sp) => sp.is_default) ?? list[0];
         if (defaultPrompt) {
           setSelectedSystemPrompt(defaultPrompt);
-          log("default prompt: ", defaultPrompt);
+          log("Default system prompt: ", defaultPrompt.system_prompt_content);
         }
       })
       .catch((err) => log("Failed to fetch system prompts", err));
@@ -453,7 +453,7 @@ export default function Chat() {
         const defaultModel = list.find((m) => m.is_default) ?? list[0];
         if (defaultModel) {
           setSelectedModel(defaultModel);
-          log("default model: ", defaultModel.llm_model);
+          log("Default model: ", defaultModel.llm_model);
         }
       })
       .catch((err) => log("Failed to fetch models", err));

@@ -82,20 +82,20 @@ export default function Layout() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-none border-none">
+          {/* <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600">
-                SCP SERVERS
+                MCP SERVERS
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-slate-500 text-green-600">
-              <McpProvider>
-                <McpSelectedCard />
-              </McpProvider>
-              <div className="mt-4 space-y-2"></div>
+            <CardContent className="text-sm text-slate-500 text-green-600"> */}
+          <McpProvider>
+            <McpSelectedCard />
+          </McpProvider>
+          {/* <div className="mt-4 space-y-2"></div>
             </CardContent>
             <CardContent className="text-sm text-slate-500 text-red-600"></CardContent>
-          </Card>
+          </Card> */}
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600">
@@ -163,12 +163,12 @@ export default function Layout() {
             </span>
           </Link> */}
 
-          <Card>
+          <Card className="bg-slate-950">
             <Button
-              className="w-full inset-shadow-card-foreground bg-white-400/30 text-cyanblue-200 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all mb-3"
+              className="w-full inset-shadow-card-foreground text-cyan-200 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all mb-3"
               onClick={() => setOpen(true)}
             >
-              TOKEN USAGE VIEW
+              🍁🍁🍁 TOKEN USAGE VIEW
             </Button>
             <TokenCalendarDialog open={open} onOpenChange={setOpen} />
           </Card>
