@@ -5,7 +5,7 @@ import { useMcp } from "@/components/mcp_provider";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useState, useRef, memo, useMemo } from "react";
+import { useEffect, useState, useRef, memo, useMemo, useCallback } from "react";
 import {
   BrainCircuit,
   Paperclip,
@@ -471,6 +471,20 @@ export default function Chat() {
       }
     },
   });
+
+  // ==================== RAG Sources ====================
+
+  const [count, setCount] = useState(0);
+
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/rag/sources", { cache: "no-store" });
+    const data = await res.json();
+    setCount(data.sources?.length ?? 0);
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   // ==================== Save / Restore ====================
   const [saving, setSaving] = useState(false);

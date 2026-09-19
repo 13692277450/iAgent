@@ -1,25 +1,47 @@
-// import "server-only";
+// lib/auth.ts
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
 const SESSION_COOKIE = "iagent_session";
 
-export async function setSession(username: string) {
+type SessionData = {
+  username: string;
+  department?: string;   // 例如 "HR"
+  
+};
+
+export async function setSession(data: SessionData) {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, username, {
+  cookieStore.set(SESSION_COOKIE, JSON.stringify(data), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 天
+    maxAge: 60 * 60 * 24 * 7,
   });
 }
 
-export async function getSession(): Promise<string | null> {
+export async function getSession(): Promise<SessionData | null> {
   const cookieStore = await cookies();
-  return cookieStore.get(SESSION_COOKIE)?.value ?? null;
+  const raw = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SessionData;
+  } catch {
+    // 兼容旧格式（纯 username 字符串）
+    return { username: raw };
+  }
 }
 
 export async function clearSession() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
+}
+
+// 👇 现在这个能正常工作了
+export async function getSessionDepartment(
+  _req?: NextRequest
+): Promise<string | undefined> {
+  const session = await getSession();
+  return session?.department;
 }

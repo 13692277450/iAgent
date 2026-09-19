@@ -76,7 +76,7 @@ export function McpSelectedCard() {
               disabled={selected.length === 0}
               className="h-8 text-xs text-red-300 bg-slate-900/60 border border-red-400/30 hover:bg-red-500/10 disabled:opacity-40"
             >
-              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              <Trash2 className="w-4 h-4 mr-1" />
               Clean All
             </Button>
           </div>

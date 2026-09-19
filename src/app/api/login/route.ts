@@ -47,7 +47,10 @@ export async function POST(req: Request) {
     }
 
     // 4. Set session cookie
-    await setSession(account.username);
+await setSession({
+  username: account.username,
+  department: account.department,  // 从数据库用户表里查出来的部门代码
+});
 
     return NextResponse.json({ success: true, username: account.username });
   } catch (error) {

@@ -16,6 +16,8 @@ import { SkillsSelectedCard } from "@/components/skills-selected-card";
 import { ConversationHistory } from "@/components/conversation-history";
 import { ConversationProvider } from "@/components/conversation-provider";
 import { useConversation } from "@/components/conversation-provider";
+import RagCard from "@/components/rag_card";
+import RagSection from "@/components/rag_section";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -52,28 +54,8 @@ export default function Layout() {
           <ConversationHistory />
           <SkillsSelectedCard />
           <McpSelectedCard />
-          <Card className="bg-white shadow-none border-none">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-blue-600">
-                VECTOR DATA CENTER
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-slate-500">
-              VECTOR DATA INFORMATION
-              <div className="mt-4 space-y-2">
-                {["VECTOR DATA STATUS", "VECTOR DATA UPLOAD", "Item 3"].map(
-                  (item) => (
-                    <div
-                      key={item}
-                      className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
-                    >
-                      {item}
-                    </div>
-                  ),
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <RagSection />
+
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600">
