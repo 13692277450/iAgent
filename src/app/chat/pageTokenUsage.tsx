@@ -59,7 +59,7 @@ export function TokenCalendarContent() {
   return (
     <div className="space-y-5">
       {/* 汇总数字 */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 ">
         <div className="rounded-lg border border-cyan-400/40 bg-slate-900 px-4 py-3">
           <div className="text-xs font-mono uppercase tracking-wider text-cyan-400">
             THIS MONTH
@@ -79,7 +79,7 @@ export function TokenCalendarContent() {
       </div>
 
       {/* 日历容器 */}
-      <div className="p-4 rounded-lg border border-cyan-400/30 bg-slate-900 overflow-hidden">
+      <div className="p-4 rounded-lg border border-cyan-400/30 bg-purple-100/50 overflow-hidden  text-cyan-400">
         <Calendar
           mode="single"
           selected={date}

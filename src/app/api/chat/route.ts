@@ -1,7 +1,9 @@
 // src/app/api/chat/route.ts
 import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
+import { log } from "@/lib/logger";
 import { buildMcpTools } from "@/lib/mcp_tools";
+import { buildSkillTools } from "@/lib/skill_tools";
 import { ALL_TOOLS } from "@/lib/tools";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -28,6 +30,8 @@ export async function POST(req: Request) {
     llm_baseUrl,
     selectedSystemPrompt,
     mcpServers = [],
+    skills = [],
+    inputTokens = 0,
   }: {
     messages: UIMessage[];
     deepThink: boolean;
@@ -36,13 +40,19 @@ export async function POST(req: Request) {
     llm_baseUrl?: string;
     selectedSystemPrompt?: string;
     mcpServers?: any[];
+    skills?: any[];
+    inputTokens?: number;
   } = body;
 
   console.log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
+  // log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
 
-  // ==================== 合并 tools ====================
+  // ==================== Combine tools ====================
   const mcpTools = buildMcpTools(mcpServers);
-  const allTools = { ...ALL_TOOLS, ...mcpTools };
+  const skillTools = buildSkillTools(skills);
+
+  const allTools = { ...ALL_TOOLS, ...mcpTools, ...skillTools };
+
   console.log("[TOOLS] Available:", Object.keys(allTools));
 
 
@@ -54,6 +64,11 @@ export async function POST(req: Request) {
   // ==================== onFinish：token usage ====================
   const onFinishHandler = async ({ usage }: any) => {
     console.log("[TOKEN] usage:", {
+      prompt: usage?.inputTokens,
+      completion: usage?.outputTokens,
+      total: usage?.totalTokens,
+    });
+    log("[TOKEN] usage:", {
       prompt: usage?.inputTokens,
       completion: usage?.outputTokens,
       total: usage?.totalTokens,
@@ -129,14 +144,19 @@ export async function POST(req: Request) {
       };
 
       // sendLog("INFO", `[Requesting]: model=${llm_model}, tools=${Object.keys(allTools).length}`);
-      sendLog("[TOOLS] Available:", `[TOOLS]: ${Object.keys(allTools).join(", ")}`);
-
+      sendLog("LOG", `[TOOLS]: ${Object.keys(allTools).join(", ")}`);
+      sendLog("INFO", `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`);
+      sendLog("INFO", `[SKILLS] : ${skills.length??0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`);
+      sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`);
+      console.log("[CHAT] skills 数量:", skills?.length ?? 0);            // 🚨 加这行
+      console.log("[CHAT] skills 详情:", JSON.stringify(skills, null, 2)); // 🚨 加这行
+      // sendLog("LOG", `[SKILLS] count=${skills?.length ?? 0}, names=${skills?.map((s) => s.name).join(", ") ?? ""}`);
 
       // 🚨 把 result 的流合并进 UI stream
       writer.merge(toUIMessageStream({ stream: result.stream }));
     },
   });
 
-  // ==================== 返回 ====================
+  // ==================== Return ====================
   return createUIMessageStreamResponse({ stream });
 }

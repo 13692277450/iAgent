@@ -13,9 +13,13 @@ import { McpSelectedCard } from "./pageMCPServers";
 import { SkillsProvider } from "@/components/skills-provider";
 import { SkillsDialog } from "@/components/skills-dialog";
 import { SkillsSelectedCard } from "@/components/skills-selected-card";
+import { ConversationHistory } from "@/components/conversation-history";
+import { ConversationProvider } from "@/components/conversation-provider";
+import { useConversation } from "@/components/conversation-provider";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
+  const { triggerRefresh, restoreId, clearRestore } = useConversation();
 
   const router = useRouter();
 
@@ -45,30 +49,9 @@ export default function Layout() {
       <div className="flex flex-1 min-h-0 w-full ">
         {/* 左侧竖条 */}
         <div className="w-[22%] min-w-0 overflow-y-auto bg-slate-50 border-r border-slate-200 p-4 space-y-2">
-          <Card className="bg-white shadow-none border-none">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-blue-600">
-                CONVERSATION CENTER
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-slate-500">
-              Conversation History
-              <div className="mt-4 space-y-2">
-                {["Item 1", "Item 2", "Item 3"].map((item) => (
-                  <div
-                    key={item}
-                    className="p-2 bg-slate-100 rounded-md cursor-pointer hover:bg-slate-200"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ConversationHistory />
           <SkillsSelectedCard />
-
           <McpSelectedCard />
-
           <Card className="bg-white shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600">

@@ -15,6 +15,7 @@ import {
   Download,
   Copy,
   BookAIcon,
+  Save,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,8 +30,10 @@ import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
 import { log } from "@/lib/logger";
+import { useSkills } from "@/components/skills-provider";
+import { useConversation } from "@/components/conversation-provider";
 
-// ==================== LLM Models ====================
+// ==================== Types ====================
 type LLMModel = {
   id: number;
   llm_name: string;
@@ -382,6 +385,7 @@ const AIMessageText = memo(function AIMessageText({
 
 export default function Chat() {
   const { selected } = useMcp();
+  const { selected: selectedSkills } = useSkills();
 
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
     message: "",
@@ -409,7 +413,7 @@ export default function Chat() {
   const [models, setModels] = useState<LLMModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
 
-  // ==================== Transport（body 用函数形式，每次请求取最新值）====================
+  // ==================== Transport ====================
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -430,16 +434,31 @@ export default function Chat() {
               auth_config: s.auth_config,
               tools: s.tools,
             })),
+            skills: selectedSkills.map((s) => ({
+              id: s.id,
+              name: s.name,
+              description: s.description,
+              input_schema: s.input_schema,
+              output_schema: s.output_schema,
+              handler_type: s.handler_type,
+              endpoint: s.endpoint,
+              handler_ref: s.handler_ref,
+              auth_type: s.auth_type,
+            })),
           };
-          // log("[TRANSPORT] 实际发送 body:", body);
+          console.log(
+            "[SKILLS] skills:",
+            body.skills.length,
+            body.skills.map((s) => s.name),
+          );
           return body;
         },
       }),
-    [deepThink, selectedModel, selectedSystemPrompt, selected],
+    [deepThink, selectedModel, selectedSystemPrompt, selected, selectedSkills],
   );
 
-  // 🚨 useChat 用 memo 化的 transport，sendMessage 不再传 body
-  const { messages, sendMessage, status } = useChat({
+  // ==================== useChat（唯一一个）====================
+  const { messages, sendMessage, status, setMessages } = useChat({
     transport,
     onData: (dataPart) => {
       if (dataPart.type === "data-log") {
@@ -453,6 +472,86 @@ export default function Chat() {
     },
   });
 
+  // ==================== Save / Restore ====================
+  const [saving, setSaving] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const { triggerRefresh, restoreId, clearRestore } = useConversation();
+
+  // 🚨 监听 restoreId 变化 → 直接用 setMessages 注入，无需 reload
+  useEffect(() => {
+    if (restoreId === null) return;
+
+    if (restoreId === 0) {
+      setMessages([]);
+      setConversationId(null);
+      clearRestore();
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/conversation/${restoreId}`);
+        const data = await res.json();
+        if (data.messages) {
+          const restoredMessages = data.messages.map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            parts: m.parts || [{ type: "text", text: m.content || "" }],
+          }));
+          setMessages(restoredMessages);
+          setConversationId(restoreId);
+        }
+      } catch (err) {
+        console.error("[restore] failed:", err);
+      } finally {
+        clearRestore();
+      }
+    })();
+  }, [restoreId, clearRestore, setMessages]);
+
+  // 🚨 Save conversation history
+  const handleSave = async () => {
+    if (!messages || messages.length === 0) {
+      showToast("❌ No messages to save");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/conversation/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          model: selectedModel?.llm_model,
+          systemPrompt: selectedSystemPrompt?.system_prompt_name,
+          messages: messages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            parts: m.parts,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+        showToast("✅ Conversation saved");
+        triggerRefresh();
+      } else {
+        showToast("❌ Save failed");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("❌ Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // New conversation
+  const handleNewChat = () => {
+    setMessages([]);
+    setConversationId(null);
+  };
   const lastMessage = messages[messages.length - 1];
 
   // ==================== Fetch System Prompts ====================
@@ -534,7 +633,6 @@ export default function Chat() {
       mcpServers: selected.map((s) => s.name),
     });
 
-    // 🚨 只传 message，body 在 transport 里
     sendMessage({ text: input });
     setInput("");
   };
@@ -796,7 +894,19 @@ export default function Chat() {
               <Globe className="w-4 h-4" />
             </Button>
 
-            {/* 6. Model Selection */}
+            {/* 6. Save Conversation */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSave}
+              disabled={saving || !messages || messages.length === 0}
+              className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 hover:bg-cyan-500/10"
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {saving ? "Saving..." : "SAVE CONV."}
+            </Button>
+
+            {/* 7. Model Selection */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-all">
                 <Cpu className="w-4 h-4 mr-1.5" />
