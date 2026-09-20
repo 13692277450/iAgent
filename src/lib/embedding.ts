@@ -19,7 +19,7 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   // OpenAI 单次请求最多 2048 条，按 100 一批更稳妥
-  const BATCH = 100;
+  const BATCH = 10;
   const results: number[][] = [];
 
   for (let i = 0; i < texts.length; i += BATCH) {

@@ -30,8 +30,7 @@ export default function RagSection() {
 
   return (
     <div>
-      <h3 className="mb-3 text-sm font-bold text-blue-600">MCP SERVERS</h3>
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 flex-col flex-full max-h-[80vh] overflow-auto">
         <RagCard
           name="RAG Server"
           status="online"

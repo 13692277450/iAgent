@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "tw-shimmer";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -46,6 +47,26 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+    }
+  }
+
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+    }
+
+    to {
+      height: 0;
+    }
+  }
 }
 
 /* 隐藏滚动条但保留滚动功能 */
@@ -129,6 +150,10 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --composer-border: oklch(0.6 0.15 200 / 0.5);
+  --composer-border-focus: oklch(0.55 0.15 200 / 0.8);
+  --composer-border-drag: oklch(0.55 0.15 200);
 }
 
 .dark {
@@ -163,6 +188,11 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --composer-border: oklch(0.8 0.15 200 / 0.8);
+  /* 亮青色 */
+  --composer-border-focus: oklch(0.85 0.15 200 / 1);
+  /* 聚焦更亮 */
+  --composer-border-drag: oklch(0.85 0.15 200);
 }
 
 @layer base {
@@ -215,3 +245,7 @@ pre[class*="language-"]>code>span {
   scrollbar-width: thin;
   scrollbar-color: rgba(34, 211, 238, 0.4) rgba(15, 23, 42, 0.5);
 }
+
+@custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
+
+@custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));

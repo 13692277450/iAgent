@@ -1,4 +1,3 @@
-// components/RagCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -21,11 +20,17 @@ export default function RagCard({
 
   return (
     <>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(true)}
-        className="group flex rounded-xl border border-slate-700 bg-slate-800 p-5 text-left shadow-lg transition group-hover:border-blue-500
-                   hover:bg-slate-750"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className="group flex w-[260px] cursor-pointer flex-col rounded-xl border border-slate-700 bg-slate-800 p-5 text-left shadow-lg transition hover:border-blue-500 hover:bg-slate-750"
       >
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-slate-100">{name}</h3>
@@ -48,7 +53,7 @@ export default function RagCard({
             查看详情 →
           </span>
         </div>
-      </button>
+      </div>
 
       {open && (
         <RagDetailDialog onClose={() => setOpen(false)} onChanged={onRefresh} />

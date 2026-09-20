@@ -1,5 +1,7 @@
 // lib/parser.ts
 import { readFile } from "fs/promises";
+import { PDFParse } from "pdf-parse";
+import { getPath } from "pdf-parse/worker";
 
 /**
  * 统一解析入口：根据文件扩展名分发到对应解析器。
@@ -26,11 +28,14 @@ export async function parseFile(file: File): Promise<string> {
 }
 
 // ---------- PDF ----------
+
+// 设置 worker 路径
+PDFParse.setWorker(getPath());
+
 async function parsePDF(buffer: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: buffer });
   const result = await parser.getText();
-  await parser.destroy(); // 记得释放内存
+  await parser.destroy();
   return result.text;
 }
 // ---------- DOCX ----------
