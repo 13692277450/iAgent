@@ -54,3 +54,7 @@ MCP Server option
 2026-09-16 UI update, Add MCP server option, Add skills selected card
 
 ![alt text](image-5.png)
+
+2026-09-20 shift to assistant-UI, add dark/light mode, add Rag data upload, add save coversation history.
+
+![alt text](image-6.png)
