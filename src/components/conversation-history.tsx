@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MessageSquare, Plus, Trash2 } from "lucide-react";
-import { useConversation } from "./conversation-provider";
+import { useConversation } from "@/components/conversation-provider";
 
 export function ConversationHistory() {
   const [list, setList] = useState<any[]>([]);

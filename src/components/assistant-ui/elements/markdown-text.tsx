@@ -16,7 +16,7 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/elements/tooltip-icon-button";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
-import { SyntaxHighlighter } from "@/components/shiki-highlighter.aui";
+import { SyntaxHighlighter } from "@/components/assistant-ui/elements/shiki-highlighter.aui";
 
 type MarkdownTextProps = Partial<TextMessagePartProps> & {
   components?: Parameters<typeof memoizeMarkdownComponents>[0];

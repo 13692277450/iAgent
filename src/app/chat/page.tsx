@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import Layout from "./pageMainLayout";
 import { McpProvider } from "@/components/mcp_provider";
-import { SkillsProvider } from "@/components/skills-provider";
+import { SkillsProvider } from "@/components/assistant-ui/elements/skills-provider";
 import { ConversationProvider } from "@/components/conversation-provider";
 
 export default async function ChatPage({

@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 // Custom providers for MCP (Model Context Protocol), Skills, and Conversation state
 import { useMcp } from "@/components/mcp_provider";
-import { useSkills } from "@/components/skills-provider";
+import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
 import { useConversation } from "@/components/conversation-provider";
 // Assistant UI runtime provider and state hook
 import { AssistantRuntimeProvider, useAuiState } from "@assistant-ui/react";
@@ -79,6 +79,8 @@ export default function ChatPage() {
   const [models, setModels] = useState<LLMModel[]>([]);
   // Currently chosen LLM model
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
+  const MAX_MESSAGES = 10;
+  const [enableSearch, setEnableSearch] = useState(false);
 
   // Build the transport once per dependency change; the body() callback
   // is re-evaluated on each request so the latest state is always sent.
@@ -86,43 +88,72 @@ export default function ChatPage() {
     () =>
       new DefaultChatTransport({
         api: "/api/chat", // Backend endpoint that handles the chat request
-        body: () => ({
-          deepThink, // Whether deep-think mode is enabled
-          selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content, // Prompt content to inject
-          llm_apiKey: selectedModel?.llm_apiKey, // API key for the model
-          llm_baseUrl: selectedModel?.llm_baseUrl, // Base URL for the model
-          llm_model: selectedModel?.llm_model, // Model identifier
-          // Serialize only the fields the backend needs for MCP servers
-          mcpServers: selected.map((s) => ({
-            id: s.id,
-            name: s.name,
-            connection_type: s.connection_type,
-            connection_api: s.connection_api,
-            auth_type: s.auth_type,
-            auth_config: s.auth_config,
-            tools: s.tools,
-          })),
-          // Serialize selected skills for the backend
-          skills: selectedSkills.map((s) => ({
-            id: s.id,
-            name: s.name,
-            description: s.description,
-            input_schema: s.input_schema,
-            output_schema: s.output_schema,
-            handler_type: s.handler_type,
-            endpoint: s.endpoint,
-            handler_ref: s.handler_ref,
-            auth_type: s.auth_type,
-          })),
-        }),
+        // 👇 body receives the current request options, including the full
+        //    message list, so we can trim it before it's sent.
+        body: (options: any) => {
+          console.log("[transport body options]", options);
+
+          // Full message history assembled by DefaultChatTransport
+          const allMessages = options?.messages ?? [];
+
+          // Keep only the most recent MAX_MESSAGES messages to save tokens.
+          // If the total is within the limit, keep everything.
+          const trimmedMessages =
+            allMessages.length > MAX_MESSAGES
+              ? allMessages.slice(-MAX_MESSAGES)
+              : allMessages;
+
+          return {
+            // 👇 Explicitly override `messages` with the trimmed list.
+            //    Without this, DefaultChatTransport would send the full history.
+            messages: trimmedMessages,
+
+            deepThink, // Whether deep-think mode is enabled
+            selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content, // Prompt content to inject
+            llm_apiKey: selectedModel?.llm_apiKey, // API key for the model
+            llm_baseUrl: selectedModel?.llm_baseUrl, // Base URL for the model
+            llm_model: selectedModel?.llm_model, // Model identifier
+            llm_enable_search: enableSearch,
+            // Serialize only the fields the backend needs for MCP servers
+            mcpServers: selected.map((s) => ({
+              id: s.id,
+              name: s.name,
+              connection_type: s.connection_type,
+              connection_api: s.connection_api,
+              auth_type: s.auth_type,
+              auth_config: s.auth_config,
+              tools: s.tools,
+            })),
+            // Serialize selected skills for the backend
+            skills: selectedSkills.map((s) => ({
+              id: s.id,
+              name: s.name,
+              description: s.description,
+              input_schema: s.input_schema,
+              output_schema: s.output_schema,
+              handler_type: s.handler_type,
+              endpoint: s.endpoint,
+              handler_ref: s.handler_ref,
+              auth_type: s.auth_type,
+            })),
+          };
+        },
       }),
     // Recreate the transport whenever any of these dependencies change
-    [deepThink, selectedModel, selectedSystemPrompt, selected, selectedSkills],
+    [
+      deepThink,
+      selectedModel,
+      selectedSystemPrompt,
+      selected,
+      selectedSkills,
+      enableSearch,
+    ],
   );
 
   // Create the chat runtime from the transport
   const runtime = useChatRuntime({
     transport,
+
     // Handle streaming data parts sent by the server
     onData: (dataPart) => {
       // "data-log" parts carry log messages to be written to the local logger
@@ -132,6 +163,7 @@ export default function ChatPage() {
           text: string;
           time: string;
         };
+
         log(data.text);
       }
     },
@@ -151,6 +183,8 @@ export default function ChatPage() {
         setModels={setModels}
         selectedModel={selectedModel}
         setSelectedModel={setSelectedModel}
+        enableSearch={enableSearch}
+        setEnableSearch={setEnableSearch}
       />
     </AssistantRuntimeProvider>
   );
@@ -170,6 +204,8 @@ type ChatInnerProps = {
   setModels: (v: LLMModel[]) => void;
   selectedModel: LLMModel | null;
   setSelectedModel: (v: LLMModel | null) => void;
+  enableSearch: boolean;
+  setEnableSearch: (v: boolean) => void;
 };
 
 function ChatInner({
@@ -183,6 +219,8 @@ function ChatInner({
   setModels,
   selectedModel,
   setSelectedModel,
+  enableSearch,
+  setEnableSearch,
 }: ChatInnerProps) {
   // Used to notify the conversation list that a new conversation was saved
   const { triggerRefresh } = useConversation();
@@ -386,7 +424,17 @@ function ChatInner({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-cyan-600"
+                // className="h-8 w-8 text-cyan-600"
+                onClick={() => {
+                  setEnableSearch(!enableSearch);
+                  log(`Search Enabled:  ${enableSearch}`);
+                }}
+                title={enableSearch ? "Internet On" : "Internet Off"}
+                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                  enableSearch
+                    ? "text-red-400 bg-cyan-500/20 border border-red-400/60 ]"
+                    : "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+                }`}
               >
                 <Globe className="w-4 h-4" />
               </Button>

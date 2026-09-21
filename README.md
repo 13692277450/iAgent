@@ -1,5 +1,5 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app). it's design for build a integrated platform for central management of AI models, skills, MCP server, token usage etc. this
-project design with including assistant-ui, tailwindCSS, typescript, postgreSQL, next.js, prisma, vercel AI-SDK. full stack development. pls kindly give your support and feedback if you like it. Email: m13692277450@outlook.com, support website: www.pavortoup.top, www.aipercy.top.
+project design with including assistant-ui, tailwindCSS, typescript, postgreSQL, next.js, prisma, vercel AI-SDK. full stack development. pls kindly give your support and feedback if you like it. Email: m13692277450@outlook.com, support website: www.pavogroup.top, www.aipercy.top.
 
 ## Getting Started
 

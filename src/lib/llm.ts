@@ -9,6 +9,7 @@ export type LlmRecord = {
   llm_baseurl: string;
   llm_model: string;
   is_default: boolean;   // 🚨
+  // enable_search: boolean;
 };
 
 // 1. 查询所有模型（用于前端下拉菜单）
@@ -51,7 +52,7 @@ export function createModelProvider(record: LlmRecord) {
     name: "custom",
     apiKey: llm_apikey,
     baseURL: llm_baseurl,
-    includeUsage: true
+    includeUsage: true,
   });
   return { provider: compatible, model: llm_model, providerKey: "custom" };
 }

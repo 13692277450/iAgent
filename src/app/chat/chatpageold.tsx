@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/suspicious/noAssignInExpressions: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 "use client";
 import { useMcp } from "@/components/mcp_provider";
@@ -30,7 +32,7 @@ import { ChevronDown, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefaultChatTransport } from "ai";
 import { log } from "@/lib/logger";
-import { useSkills } from "@/components/skills-provider";
+import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
 import { useConversation } from "@/components/conversation-provider";
 
 // ==================== Types ====================

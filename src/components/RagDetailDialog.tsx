@@ -4,7 +4,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import UploadDropzone from "./UploadDropzone";
+import UploadDropzone from "@/components/assistant-ui/elements/UploadDropzone";
 
 type Source = {
   id: number;
