@@ -63,6 +63,8 @@ type SystemPrompt = {
 // Outer component: only responsible for creating the runtime
 // ============================================================
 export default function ChatPage() {
+  const [enableRAG, setEnableRAG] = useState(false); // 默认开启RAG search
+  const [enableMic, setEnableMic] = useState(false);
   // Currently selected MCP servers (from MCP provider)
   const { selected } = useMcp();
   // Currently selected skills (from Skills provider)
@@ -114,6 +116,8 @@ export default function ChatPage() {
             llm_baseUrl: selectedModel?.llm_baseUrl, // Base URL for the model
             llm_model: selectedModel?.llm_model, // Model identifier
             llm_enable_search: enableSearch,
+            llm_enable_rag: enableRAG,
+            llm_enable_mic: enableMic,
             // Serialize only the fields the backend needs for MCP servers
             mcpServers: selected.map((s) => ({
               id: s.id,
@@ -147,6 +151,8 @@ export default function ChatPage() {
       selected,
       selectedSkills,
       enableSearch,
+      enableRAG,
+      enableMic,
     ],
   );
 
@@ -185,6 +191,10 @@ export default function ChatPage() {
         setSelectedModel={setSelectedModel}
         enableSearch={enableSearch}
         setEnableSearch={setEnableSearch}
+        enableRAG={enableRAG}
+        setEnableRAG={setEnableRAG}
+        enableMic={enableMic}
+        setEnableMic={setEnableMic}
       />
     </AssistantRuntimeProvider>
   );
@@ -206,6 +216,10 @@ type ChatInnerProps = {
   setSelectedModel: (v: LLMModel | null) => void;
   enableSearch: boolean;
   setEnableSearch: (v: boolean) => void;
+  enableRAG: boolean;
+  setEnableRAG: (v: boolean) => void;
+  enableMic: boolean;
+  setEnableMic: (v: boolean) => void;
 };
 
 function ChatInner({
@@ -221,6 +235,10 @@ function ChatInner({
   setSelectedModel,
   enableSearch,
   setEnableSearch,
+  enableRAG,
+  setEnableRAG,
+  enableMic,
+  setEnableMic,
 }: ChatInnerProps) {
   // Used to notify the conversation list that a new conversation was saved
   const { triggerRefresh } = useConversation();
@@ -416,7 +434,17 @@ function ChatInner({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-cyan-600"
+                onClick={() => {
+                  setEnableMic(!enableMic);
+                  log(`Mic Enabled:  ${enableMic}`);
+                  log(`Mic Enabled:  ${enableMic}`);
+                }}
+                title={enableMic ? "Microphone On" : "Microphone Off"}
+                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                  enableMic
+                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-orange-400 bg-cyan-500/20 border-orange-400/60 ]"
+                }`}
               >
                 <Mic className="w-4 h-4" />
               </Button>
@@ -427,16 +455,35 @@ function ChatInner({
                 // className="h-8 w-8 text-cyan-600"
                 onClick={() => {
                   setEnableSearch(!enableSearch);
-                  log(`Search Enabled:  ${enableSearch}`);
+
+                  log(`Search Enabled:  ${!enableSearch}`);
                 }}
                 title={enableSearch ? "Internet On" : "Internet Off"}
                 className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
                   enableSearch
-                    ? "text-red-400 bg-cyan-500/20 border border-red-400/60 ]"
-                    : "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-red-400 bg-cyan-500/20 border-red-400/60 ]"
                 }`}
               >
                 <Globe className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                // className="h-8 w-8 text-cyan-600"
+                onClick={() => {
+                  setEnableRAG(!enableRAG);
+
+                  log(`RAG Enabled: ${!enableRAG}`);
+                }}
+                title={enableRAG ? "RAG On" : "RAG Off"}
+                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                  enableRAG
+                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-red-400 bg-cyan-500/20 border-red-400/60 ]"
+                }`}
+              >
+                <BookAIcon className="w-4 h-4" />
               </Button>
             </div>
           }

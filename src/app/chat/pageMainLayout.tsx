@@ -23,6 +23,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Session } from "inspector";
 import { getSession } from "@/lib/auth";
+import Image from "next/image";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -46,7 +47,15 @@ export default function Layout() {
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
       {/* 1. 顶部横条 */}
       <div className="w-full h-[5%] bg-card text-cyan-500 dark:text-cyan-300 flex items-center px-6 border-b border-border">
-        <h1 className="text-xl font-bold">🦚 iAgent</h1>
+        {/* <h1 className="text-xl font-bold">🦚 iAgent</h1> */}
+        <Image
+          src="/iAgentLogo.png"
+          // loading="lazy"
+          alt="iAgent"
+          width={100}
+          height={24}
+          className="w-100 h-20"
+        />
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

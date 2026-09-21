@@ -15,7 +15,8 @@ import {
   toUIMessageStream,
   UIMessage,
 } from "ai";
-
+import { searchRAG } from "@/lib/rag";
+import { getSessionDepartment } from "@/lib/auth";
 export async function POST(req: Request) {
   const session = await getSession();
   const username = session ?? "anonymous";
@@ -56,9 +57,65 @@ export async function POST(req: Request) {
   console.log("[TOOLS] Available:", Object.keys(allTools));
 
 
-  const systemPrompt =
+ // ==================== RAG 检索 ====================
+const enableRAG = body.enableRAG ?? false;
+let ragContext = "";
+let ragSources: any[] = [];
+ if(enableRAG){
+try {
+  // 取最后一条用户消息
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+  const question =
+    lastUserMessage?.parts
+      ?.filter((p: any) => p.type === "text")
+      .map((p: any) => p.text)
+      .join("\n") ?? "";
+
+  if (question) {
+    // 取当前用户部门（实现部门隔离）
+    const department = await getSessionDepartment();
+
+    ragSources = await searchRAG(question, {
+      department,
+      topK: 5,
+      minSimilarity: 0.4,
+    });
+
+    if (ragSources.length > 0) {
+      ragContext = ragSources
+        .map((c, i) => `[${i + 1}] 来自《${c.title}》\n${c.content}`)
+        .join("\n\n");
+    }
+
+    console.log("[RAG] question:", question);
+    console.log("[RAG] department:", department);
+    console.log("[RAG] sources:", ragSources.length);
+  }
+} catch (err) {
+  console.error("[RAG] search failed:", err);
+  // 检索失败不阻断对话，继续走正常流程
+}
+ }
+
+// ==================== 构建 system prompt ====================
+  const basePrompt =
     selectedSystemPrompt ||
     "You are a smart assistant, you can answer any question.";
+ 
+  const systemPrompt = ragContext
+    ? `${basePrompt}
+
+  你是一个企业知识库助手。请严格根据以下参考资料回答问题。
+  如果资料中没有相关信息，请明确告知"根据现有资料无法回答"。
+  回答时请在末尾标注引用的资料编号，格式为 [1]、[2]。
+
+  === 参考资料 ===
+  ${ragContext}
+  === 资料结束 ===
+  `
+    : basePrompt;
+  
+
   const isDeepSeek = llm_baseUrl?.includes("deepseek");
 
   // ==================== onFinish：token usage ====================

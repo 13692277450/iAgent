@@ -40,3 +40,4 @@ export async function embedOne(text: string): Promise<number[]> {
   const [vec] = await embedTexts([text]);
   return vec;
 }
+
