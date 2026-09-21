@@ -377,7 +377,7 @@ const ThreadWelcome: FC = () => {
   return (
     <div className="aui-thread-welcome-root mb-6 flex flex-col px-2">
       <p className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-2xl font-medium tracking-tight duration-200">
-        Hi, Sir / Madam! How can I help you today?
+        🦋 Hi, How can I help you today?
       </p>
     </div>
   );
@@ -659,7 +659,7 @@ const AssistantActionBar: FC = () => {
   return (
     <ActionBarPrimitive.Root
       hideWhenRunning
-      autohide="not-last"
+      autohide="never"
       className="aui-assistant-action-bar-root text-muted-foreground animate-in fade-in col-start-3 row-start-2 -ms-1 flex gap-1 duration-200"
     >
       <ActionBarPrimitive.Copy render={<TooltipIconButton tooltip="Copy" />}>
@@ -670,6 +670,11 @@ const AssistantActionBar: FC = () => {
           <CopyIcon className="animate-in zoom-in-75 fade-in duration-150" />
         </AuiIf>
       </ActionBarPrimitive.Copy>
+      <ActionBarPrimitive.ExportMarkdown
+        render={<TooltipIconButton tooltip="Download as Markdown" />}
+      >
+        <DownloadIcon className="text-green-400" />
+      </ActionBarPrimitive.ExportMarkdown>
       <AuiIf condition={(s) => s.thread.capabilities.feedback}>
         <ActionBarPrimitive.FeedbackPositive
           render={

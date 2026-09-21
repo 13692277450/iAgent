@@ -1,18 +1,25 @@
-"use client";
+"use client"; // Marks this file as a Client Component in Next.js App Router
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+// React hooks for side effects, state, and memoization
+import { useEffect, useState, useMemo } from "react";
+// Custom providers for MCP (Model Context Protocol), Skills, and Conversation state
 import { useMcp } from "@/components/mcp_provider";
 import { useSkills } from "@/components/skills-provider";
 import { useConversation } from "@/components/conversation-provider";
+// Assistant UI runtime provider and state hook
 import { AssistantRuntimeProvider, useAuiState } from "@assistant-ui/react";
+// Hook that wires the AI SDK transport into a chat runtime
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+// Prebuilt Thread component that renders the chat UI
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
+// Transport layer that posts chat requests to an API route
 import { DefaultChatTransport } from "ai";
+// Simple logger utility
 import { log } from "@/lib/logger";
 
+// Icon set used in the composer toolbar
 import {
   BrainCircuit,
-  Paperclip,
   Mic,
   Globe,
   Save,
@@ -20,6 +27,7 @@ import {
   BookAIcon,
   ChevronDown,
 } from "lucide-react";
+// Dropdown menu primitives (shadcn/ui style)
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +37,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+// Button primitive
 import { Button } from "@/components/ui/button";
 
+// Shape of an LLM model record coming from the backend
 type LLMModel = {
   id: number;
   llm_name: string;
@@ -40,38 +50,49 @@ type LLMModel = {
   is_default: boolean;
 };
 
+// Shape of a system prompt record coming from the backend
 type SystemPrompt = {
   id: number;
   system_prompt_name: string;
   system_prompt_content: string;
-  system_prompt_format?: string;
+  system_prompt_format?: string; // Optional format hint (e.g., markdown, plain)
   is_default: boolean;
 };
 
 // ============================================================
-// 外层：只负责创建 runtime，不调用任何 assistant-ui 的 hook
+// Outer component: only responsible for creating the runtime
 // ============================================================
 export default function ChatPage() {
+  // Currently selected MCP servers (from MCP provider)
   const { selected } = useMcp();
+  // Currently selected skills (from Skills provider)
   const { selected: selectedSkills } = useSkills();
 
+  // Toggle for "deep think" reasoning mode
   const [deepThink, setDeepThink] = useState(false);
+  // List of available system prompts
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
+  // Currently chosen system prompt
   const [selectedSystemPrompt, setSelectedSystemPrompt] =
     useState<SystemPrompt | null>(null);
+  // List of available LLM models
   const [models, setModels] = useState<LLMModel[]>([]);
+  // Currently chosen LLM model
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
 
+  // Build the transport once per dependency change; the body() callback
+  // is re-evaluated on each request so the latest state is always sent.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/chat",
+        api: "/api/chat", // Backend endpoint that handles the chat request
         body: () => ({
-          deepThink,
-          selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
-          llm_apiKey: selectedModel?.llm_apiKey,
-          llm_baseUrl: selectedModel?.llm_baseUrl,
-          llm_model: selectedModel?.llm_model,
+          deepThink, // Whether deep-think mode is enabled
+          selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content, // Prompt content to inject
+          llm_apiKey: selectedModel?.llm_apiKey, // API key for the model
+          llm_baseUrl: selectedModel?.llm_baseUrl, // Base URL for the model
+          llm_model: selectedModel?.llm_model, // Model identifier
+          // Serialize only the fields the backend needs for MCP servers
           mcpServers: selected.map((s) => ({
             id: s.id,
             name: s.name,
@@ -81,6 +102,7 @@ export default function ChatPage() {
             auth_config: s.auth_config,
             tools: s.tools,
           })),
+          // Serialize selected skills for the backend
           skills: selectedSkills.map((s) => ({
             id: s.id,
             name: s.name,
@@ -94,12 +116,16 @@ export default function ChatPage() {
           })),
         }),
       }),
+    // Recreate the transport whenever any of these dependencies change
     [deepThink, selectedModel, selectedSystemPrompt, selected, selectedSkills],
   );
 
+  // Create the chat runtime from the transport
   const runtime = useChatRuntime({
     transport,
+    // Handle streaming data parts sent by the server
     onData: (dataPart) => {
+      // "data-log" parts carry log messages to be written to the local logger
       if (dataPart.type === "data-log") {
         const data = dataPart.data as {
           level: string;
@@ -111,6 +137,7 @@ export default function ChatPage() {
     },
   });
 
+  // Provide the runtime to the entire subtree, then render the inner UI
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ChatInner
@@ -130,7 +157,7 @@ export default function ChatPage() {
 }
 
 // ============================================================
-// 内层：在 Provider 内部，可以安全使用 useAuiState
+// Inner component: renders the UI and consumes the runtime
 // ============================================================
 type ChatInnerProps = {
   deepThink: boolean;
@@ -157,13 +184,29 @@ function ChatInner({
   selectedModel,
   setSelectedModel,
 }: ChatInnerProps) {
+  // Used to notify the conversation list that a new conversation was saved
   const { triggerRefresh } = useConversation();
+  // Whether a save request is in flight
   const [saving, setSaving] = useState(false);
 
-  // ✅ 现在在 Provider 内部，useAuiState 可以正常工作
+  // ✅ Toast state for showing transient success/error messages
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+    message: "",
+    visible: false,
+  });
+
+  // Show a toast message and auto-hide it after 3 seconds
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 3000);
+  };
+
+  // Read the current thread's messages from the assistant-ui state
   const messages = useAuiState((s) => s.thread.messages);
 
-  // 加载 System Prompts
+  // Load system prompts on mount and select the default (or first) one
   useEffect(() => {
     fetch("/api/system_prompts")
       .then((r) => r.json())
@@ -173,12 +216,11 @@ function ChatInner({
         setSelectedSystemPrompt(
           list.find((sp) => sp.is_default) ?? list[0] ?? null,
         );
-        log(data.text);
       })
       .catch((err) => log("Failed to fetch system prompts", err));
   }, [setSystemPrompts, setSelectedSystemPrompt]);
 
-  // 加载模型
+  // Load LLM models on mount and select the default (or first) one
   useEffect(() => {
     fetch("/api/llm")
       .then((r) => r.json())
@@ -186,14 +228,11 @@ function ChatInner({
         const list: LLMModel[] = data.models ?? [];
         setModels(list);
         setSelectedModel(list.find((m) => m.is_default) ?? list[0] ?? null);
-        // log(
-        //   "[LLM NAME]: ",
-        //   list.map((m) => m.llm_model),
-        // );
       })
       .catch((err) => log("Failed to fetch models", err));
   }, [setModels, setSelectedModel]);
 
+  // Persist the current conversation to the backend
   const handleSave = async () => {
     if (!messages?.length) {
       log("No messages to save");
@@ -207,6 +246,7 @@ function ChatInner({
         body: JSON.stringify({
           model: selectedModel?.llm_model,
           systemPrompt: selectedSystemPrompt?.system_prompt_name,
+          // Only send the fields the backend needs for each message
           messages: messages.map((m) => ({
             id: m.id,
             role: m.role,
@@ -215,20 +255,25 @@ function ChatInner({
         }),
       });
       const data = await res.json();
+      // Refresh the conversation list if the backend returned an ID
       if (data.conversationId) triggerRefresh();
+      showToast("Conversation saved successfully");
     } catch (err) {
+      showToast("Save failed");
       log("Save failed", err);
     } finally {
       setSaving(false);
     }
   };
+
   return (
     <div className="h-full w-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-hidden">
         <Thread
+          // Custom toolbar rendered below the composer
           composerToolbar={
             <div className="flex items-center gap-2 flex-wrap">
-              {/* DeepThink */}
+              {/* DeepThink toggle button */}
               <Button
                 variant="ghost"
                 type="button"
@@ -246,7 +291,7 @@ function ChatInner({
                 {deepThink ? "DeepThink On" : "DeepThink Off"}
               </Button>
 
-              {/* System Prompt */}
+              {/* System prompt selector dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
                   <BookAIcon className="w-4 h-4 mr-1.5" />
@@ -282,7 +327,7 @@ function ChatInner({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Model */}
+              {/* LLM model selector dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
                   <Cpu className="w-4 h-4 mr-1.5" />
@@ -318,13 +363,7 @@ function ChatInner({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-cyan-600"
-              >
-                <Paperclip className="w-4 h-4" />
-              </Button> */}
+              {/* Save conversation button */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -335,6 +374,7 @@ function ChatInner({
                 <Save className="w-3.5 h-3.5 mr-1" />
                 {saving ? "Saving..." : "SAVE"}
               </Button>
+              {/* Placeholder microphone button (not wired up yet) */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -342,6 +382,7 @@ function ChatInner({
               >
                 <Mic className="w-4 h-4" />
               </Button>
+              {/* Placeholder globe/web button (not wired up yet) */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -352,6 +393,22 @@ function ChatInner({
             </div>
           }
         />
+      </div>
+
+      {/* Toast notification */}
+      <div
+        className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
+          toast.visible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-2 pointer-events-none"
+        } ${
+          // Cyan styling for success messages, red for everything else
+          toast.message.startsWith("✅") || toast.message.includes("success")
+            ? "bg-cyan-500/20 text-cyan-100 border-cyan-400/50"
+            : "bg-red-500/20 text-red-100 border-red-400/50"
+        }`}
+      >
+        {toast.message}
       </div>
     </div>
   );

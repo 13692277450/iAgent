@@ -45,3 +45,8 @@ export async function getSessionDepartment(
   const session = await getSession();
   return session?.department;
 }
+
+export async function getCurrentUsername(): Promise<string | null> {
+  const session = await getSession();
+  return session?.username ?? null;
+}

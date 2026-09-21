@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/a11y/useSemanticElements: <explanation> */
 "use client";
 
 import { useState } from "react";
@@ -43,14 +44,14 @@ export default function RagCard({
           </span>
         </div>
 
-        <p className="mt-1 text-xs text-slate-400">RAG 向量知识库 · MCP 服务</p>
+        <p className="mt-1 text-xs text-slate-400">RAG Vector Knowledge Base</p>
 
         <div className="mt-6 flex items-center justify-between">
           <span className="text-xs text-slate-300">
-            📄 {sourceCount} 个数据源
+            📄 {sourceCount} DataSource
           </span>
-          <span className="text-xs text-blue-400 opacity-0 transition group-hover:opacity-100">
-            查看详情 →
+          <span className="text-xs text-cyan-600 opacity-40 transition group-hover:opacity-100">
+            SETUP →
           </span>
         </div>
       </div>

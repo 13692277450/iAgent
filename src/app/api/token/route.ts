@@ -1,16 +1,16 @@
-
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getCurrentUsername } from "@/lib/auth";
 import { getTokenUsageByUser } from "@/lib/token";
 import { log } from "@/lib/logger";
 
 export async function GET() {
-  try {
-    const username = await getSession();
-    if (!username) {
-      return NextResponse.json({ usage: [] }, { status: 401 });
-    }
+  const username = await getCurrentUsername();
 
+  if (!username) {
+    return NextResponse.json({ usage: [] }, { status: 401 });
+  }
+
+  try {
     const rows = await getTokenUsageByUser(username);
     const usageMap: Record<string, number> = {};
     rows.forEach((r) => {
