@@ -1,24 +1,21 @@
 /** biome-ignore-all assist/source/organizeImports: <explanation> */
-"use client"; // Marks this file as a Client Component in Next.js App Router
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
+"use client";
 
-// React hooks for side effects, state, and memoization
-import { useEffect, useState, useMemo } from "react";
-// Custom providers for MCP (Model Context Protocol), Skills, and Conversation state
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useMcp } from "@/components/mcp_provider";
 import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
 import { useConversation } from "@/components/conversation-provider";
-// Assistant UI runtime provider and state hook
-import { AssistantRuntimeProvider, useAuiState } from "@assistant-ui/react";
-// Hook that wires the AI SDK transport into a chat runtime
+import {
+  AssistantRuntimeProvider,
+  useAuiState,
+  useAui,
+} from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
-// Prebuilt Thread component that renders the chat UI
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
-// Transport layer that posts chat requests to an API route
 import { DefaultChatTransport } from "ai";
-// Simple logger utility
 import { log, LogLevel, logWithColor, styledLog } from "@/lib/logger";
 
-// Icon set used in the composer toolbar
 import {
   BrainCircuit,
   Mic,
@@ -27,8 +24,8 @@ import {
   Cpu,
   BookAIcon,
   ChevronDown,
+  Plus,
 } from "lucide-react";
-// Dropdown menu primitives (shadcn/ui style)
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,10 +35,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// Button primitive
 import { Button } from "@/components/ui/button";
 
-// Shape of an LLM model record coming from the backend
 type LLMModel = {
   id: number;
   llm_name: string;
@@ -51,100 +46,81 @@ type LLMModel = {
   is_default: boolean;
 };
 
-// Shape of a system prompt record coming from the backend
 type SystemPrompt = {
   id: number;
   system_prompt_name: string;
   system_prompt_content: string;
-  system_prompt_format?: string; // Optional format hint (e.g., markdown, plain)
+  system_prompt_format?: string;
   is_default: boolean;
 };
 
 // ============================================================
-// Outer component: only responsible for creating the runtime
+// 外层：状态管理
 // ============================================================
 export default function ChatPage() {
-  const [enableRAG, setEnableRAG] = useState(false); // 默认开启RAG search
+  const [enableRAG, setEnableRAG] = useState(false);
   const [enableMic, setEnableMic] = useState(false);
-  // Currently selected MCP servers (from MCP provider)
   const { selected } = useMcp();
-  // Currently selected skills (from Skills provider)
   const { selected: selectedSkills } = useSkills();
 
-  // Toggle for "deep think" reasoning mode
   const [deepThink, setDeepThink] = useState(false);
-  // List of available system prompts
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
-  // Currently chosen system prompt
   const [selectedSystemPrompt, setSelectedSystemPrompt] =
     useState<SystemPrompt | null>(null);
-  // List of available LLM models
   const [models, setModels] = useState<LLMModel[]>([]);
-  // Currently chosen LLM model
   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
   const MAX_MESSAGES = 10;
   const [enableSearch, setEnableSearch] = useState(false);
 
-  // Build the transport once per dependency change; the body() callback
-  // is re-evaluated on each request so the latest state is always sent.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/chat", // Backend endpoint that handles the chat request
-        // 👇 body receives the current request options, including the full
-        //    message list, so we can trim it before it's sent.
+        api: "/api/chat",
         body: (options: any) => {
-          console.log("[transport body options]", options);
-
-          // Full message history assembled by DefaultChatTransport
+          // 防御性检查：确保 messages 是数组
           const allMessages = options?.messages ?? [];
-
-          // Keep only the most recent MAX_MESSAGES messages to save tokens.
-          // If the total is within the limit, keep everything.
           const trimmedMessages =
-            allMessages.length > MAX_MESSAGES
+            Array.isArray(allMessages) && allMessages.length > MAX_MESSAGES
               ? allMessages.slice(-MAX_MESSAGES)
               : allMessages;
 
           return {
-            // 👇 Explicitly override `messages` with the trimmed list.
-            //    Without this, DefaultChatTransport would send the full history.
             messages: trimmedMessages,
-
-            deepThink, // Whether deep-think mode is enabled
-            selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content, // Prompt content to inject
-            llm_apiKey: selectedModel?.llm_apiKey, // API key for the model
-            llm_baseUrl: selectedModel?.llm_baseUrl, // Base URL for the model
-            llm_model: selectedModel?.llm_model, // Model identifier
+            deepThink,
+            selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
+            llm_apiKey: selectedModel?.llm_apiKey,
+            llm_baseUrl: selectedModel?.llm_baseUrl,
+            llm_model: selectedModel?.llm_model,
             llm_enable_search: enableSearch,
             llm_enable_rag: enableRAG,
             llm_enable_mic: enableMic,
-            // Serialize only the fields the backend needs for MCP servers
-            mcpServers: selected.map((s) => ({
-              id: s.id,
-              name: s.name,
-              connection_type: s.connection_type,
-              connection_api: s.connection_api,
-              auth_type: s.auth_type,
-              auth_config: s.auth_config,
-              tools: s.tools,
-            })),
-            // Serialize selected skills for the backend
-            skills: selectedSkills.map((s) => ({
-              id: s.id,
-              name: s.name,
-              description: s.description,
-              input_schema: s.input_schema,
-              output_schema: s.output_schema,
-              handler_type: s.handler_type,
-              endpoint: s.endpoint,
-              handler_ref: s.handler_ref,
-              auth_type: s.auth_type,
-            })),
+            mcpServers: Array.isArray(selected)
+              ? selected.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  connection_type: s.connection_type,
+                  connection_api: s.connection_api,
+                  auth_type: s.auth_type,
+                  auth_config: s.auth_config,
+                  tools: s.tools,
+                }))
+              : [],
+            skills: Array.isArray(selectedSkills)
+              ? selectedSkills.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  description: s.description,
+                  input_schema: s.input_schema,
+                  output_schema: s.output_schema,
+                  handler_type: s.handler_type,
+                  endpoint: s.endpoint,
+                  handler_ref: s.handler_ref,
+                  auth_type: s.auth_type,
+                }))
+              : [],
           };
         },
       }),
-    // Recreate the transport whenever any of these dependencies change
     [
       deepThink,
       selectedModel,
@@ -157,13 +133,9 @@ export default function ChatPage() {
     ],
   );
 
-  // Create the chat runtime from the transport
   const runtime = useChatRuntime({
     transport,
-
-    // Handle streaming data parts sent by the server
     onData: (dataPart) => {
-      // "data-log" parts carry log messages to be written to the local logger
       if (dataPart.type === "data-log") {
         const data = dataPart.data as {
           level: string;
@@ -176,12 +148,10 @@ export default function ChatPage() {
           data.text,
           data.color,
         );
-        log(data.text);
       }
     },
   });
 
-  // Provide the runtime to the entire subtree, then render the inner UI
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ChatInner
@@ -207,7 +177,7 @@ export default function ChatPage() {
 }
 
 // ============================================================
-// Inner component: renders the UI and consumes the runtime
+// Inner：UI + 恢复逻辑
 // ============================================================
 type ChatInnerProps = {
   deepThink: boolean;
@@ -246,18 +216,16 @@ function ChatInner({
   enableMic,
   setEnableMic,
 }: ChatInnerProps) {
-  // Used to notify the conversation list that a new conversation was saved
-  const { triggerRefresh } = useConversation();
-  // Whether a save request is in flight
+  const { triggerRefresh, restoreId, clearRestore, requestRestore } =
+    useConversation();
   const [saving, setSaving] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
 
-  // ✅ Toast state for showing transient success/error messages
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
     message: "",
     visible: false,
   });
 
-  // Show a toast message and auto-hide it after 3 seconds
   const showToast = (message: string) => {
     setToast({ message, visible: true });
     setTimeout(() => {
@@ -265,50 +233,189 @@ function ChatInner({
     }, 3000);
   };
 
-  // Read the current thread's messages from the assistant-ui state
   const messages = useAuiState((s) => s.thread.messages);
+  const aui = useAui();
+  // 底层 AI SDK useChat 实例（由 useAISDKRuntime 通过 extras 提供），
+  // 恢复历史会话时直接注入消息，这是与适配器内部一致的受支持方式
+  const chat = useAuiState(
+    (s) => s.thread.extras as { chat?: { setMessages: (m: any) => void } } | undefined,
+  )?.chat;
 
-  // Load system prompts on mount and select the default (or first) one
+  // ============================================================
+  // 恢复历史 / 新建会话
+  // ============================================================
+  // 记录最近一次恢复请求，避免快速连续点击时旧请求覆盖新请求
+  const restoreSeqRef = useRef(0);
+
+  useEffect(() => {
+    // 没有要恢复的 ID，直接跳过
+    if (restoreId === null) return;
+
+    const seq = ++restoreSeqRef.current;
+    const isLatest = () => restoreSeqRef.current === seq;
+    const done = () => {
+      if (isLatest()) clearRestore();
+    };
+
+    // 1. 新建会话：ID 为 0
+    if (restoreId === 0) {
+      console.log("[restore] 创建新会话");
+      if (chat && typeof chat.setMessages === "function") {
+        chat.setMessages([]);
+      } else {
+        aui.thread().reset();
+      }
+      setConversationId(null);
+      done();
+      return;
+    }
+
+    // 2. 恢复历史会话
+    console.log(`[restore] 开始恢复会话 ID: ${restoreId}`);
+
+    (async () => {
+      try {
+        let data: any;
+        try {
+          const res = await fetch(`/api/conversation/${restoreId}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          data = await res.json();
+        } catch (err) {
+          console.error("[restore] 获取会话数据失败:", err);
+          if (isLatest()) showToast("❌ 加载会话失败");
+          return;
+        }
+
+        // 防御性检查：确保 messages 存在且是数组
+        const rawMessages = data?.messages;
+        if (!Array.isArray(rawMessages)) {
+          console.warn("[restore] 未找到有效的 messages 数组", data);
+          if (isLatest()) showToast("❌ 会话数据格式无效");
+          return;
+        }
+
+        if (!chat || typeof chat.setMessages !== "function") {
+          console.error("[restore] 底层 chat 实例不可用");
+          if (isLatest()) showToast("❌ 恢复失败（runtime 未就绪）");
+          return;
+        }
+
+        // 转换为 AI SDK UIMessage 格式（{ id, role, parts, createdAt }）
+        const uiMessages = rawMessages
+          .filter(
+            (m: any) =>
+              m && typeof m === "object" && (m.role === "user" || m.role === "assistant"),
+          )
+          .map((m: any, idx: number) => {
+            let text = "";
+
+            try {
+              if (typeof m.content === "string") {
+                text = m.content;
+              } else if (m.parts) {
+                // 处理 parts 可能是字符串的情况
+                const parts =
+                  typeof m.parts === "string" ? JSON.parse(m.parts) : m.parts;
+
+                if (Array.isArray(parts)) {
+                  text = parts
+                    .filter(
+                      (p: any) =>
+                        p && typeof p === "object" && p.type === "text",
+                    )
+                    .map((p: any) => p.text || "")
+                    .join("");
+                }
+              } else if (m.text) {
+                text = String(m.text);
+              }
+            } catch (e) {
+              console.warn(`[restore] 解析第 ${idx} 条消息内容失败`, e);
+              text = "[解析失败]";
+            }
+
+            return {
+              id: String(m.id || `restored-${idx}-${Date.now()}`),
+              role: m.role,
+              createdAt:
+                m.created_at || m.createdAt
+                  ? new Date(m.created_at || m.createdAt)
+                  : new Date(),
+              parts: [{ type: "text", text: text || "" }],
+            };
+          })
+          .filter((m: any) => {
+            // 过滤完全空的文本消息，但保留 assistant 消息以维持对话结构
+            const hasText = m.parts?.some((p: any) => p.text?.trim());
+            return hasText || m.role === "assistant";
+          });
+
+        console.log(`[restore] 成功解析 ${uiMessages.length} 条消息`);
+
+        if (!isLatest()) return;
+
+        // 关键步骤：直接设置 AI SDK chat 的消息。
+        // 不能用 aui.thread().reset()：AI SDK 适配器要求消息带有内部绑定，
+        // reset() 生成的新消息会被 getExternalStoreMessages 解析为空数组，
+        // 反而把消息清空。
+        chat.setMessages(uiMessages);
+
+        setConversationId(restoreId as any);
+        showToast(`✅ 已恢复 ${uiMessages.length} 条消息`);
+      } catch (err) {
+        console.error("[restore] 未知错误:", err);
+        if (isLatest()) showToast("❌ 恢复失败: " + (err as Error).message);
+      } finally {
+        done();
+      }
+    })();
+  }, [restoreId, clearRestore, chat, aui]);
+
+  // 加载 system prompts
   useEffect(() => {
     fetch("/api/system_prompts")
       .then((r) => r.json())
       .then((data) => {
-        const list: SystemPrompt[] = data.system_prompts ?? [];
+        const list: SystemPrompt[] = Array.isArray(data?.system_prompts)
+          ? data.system_prompts
+          : [];
         setSystemPrompts(list);
         setSelectedSystemPrompt(
           list.find((sp) => sp.is_default) ?? list[0] ?? null,
         );
       })
       .catch((err) => log("Failed to fetch system prompts", err));
-  }, [setSystemPrompts, setSelectedSystemPrompt]);
+  }, []); // 移除不必要的依赖，防止重复请求
 
-  // Load LLM models on mount and select the default (or first) one
+  // 加载 LLM models
   useEffect(() => {
     fetch("/api/llm")
       .then((r) => r.json())
       .then((data) => {
-        const list: LLMModel[] = data.models ?? [];
+        const list: LLMModel[] = Array.isArray(data?.models) ? data.models : [];
         setModels(list);
         setSelectedModel(list.find((m) => m.is_default) ?? list[0] ?? null);
       })
       .catch((err) => log("Failed to fetch models", err));
-  }, [setModels, setSelectedModel]);
+  }, []);
 
-  // Persist the current conversation to the backend
+  // 保存
   const handleSave = async () => {
-    if (!messages?.length) {
-      log("No messages to save");
+    // 防御性检查：确保 messages 存在
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      showToast("❌ No messages to save");
       return;
     }
+
     setSaving(true);
     try {
       const res = await fetch("/api/conversation/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          conversationId,
           model: selectedModel?.llm_model,
           systemPrompt: selectedSystemPrompt?.system_prompt_name,
-          // Only send the fields the backend needs for each message
           messages: messages.map((m) => ({
             id: m.id,
             role: m.role,
@@ -317,33 +424,51 @@ function ChatInner({
         }),
       });
       const data = await res.json();
-      // Refresh the conversation list if the backend returned an ID
-      if (data.conversationId) triggerRefresh();
-      showToast("Conversation saved successfully");
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+        triggerRefresh();
+        showToast("✅ Conversation saved");
+      } else {
+        showToast("❌ Save failed");
+      }
     } catch (err) {
-      showToast("Save failed");
+      showToast("❌ Save failed");
       log("Save failed", err);
     } finally {
       setSaving(false);
     }
   };
-  // useEffect(() => {
-  //   log(`[RAG] status: ${enableRAG}`);
-  // }, [enableRAG]);
+
+  // 新会话
+  const handleNewChat = () => {
+    requestRestore(0); // 触发外层 restoreId = 0
+    setConversationId(null);
+  };
+
   return (
     <div className="h-full w-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-hidden">
         <Thread
-          // Custom toolbar rendered below the composer
           composerToolbar={
             <div className="flex items-center gap-2 flex-wrap">
-              {/* DeepThink toggle button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNewChat}
+                className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 hover:bg-cyan-500/10"
+                title="New Conversation"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                NEW
+              </Button>
+
               <Button
                 variant="ghost"
                 type="button"
                 onClick={() => {
-                  setDeepThink(!deepThink);
-                  log(`[DEEP_THINK] DeepThink shifted: ${!deepThink}`);
+                  const next = !deepThink;
+                  setDeepThink(next);
+                  log(`[DEEP_THINK] DeepThink shifted: ${next}`);
                 }}
                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                   deepThink
@@ -355,7 +480,6 @@ function ChatInner({
                 {deepThink ? "DeepThink On" : "DeepThink Off"}
               </Button>
 
-              {/* System prompt selector dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
                   <BookAIcon className="w-4 h-4 mr-1.5" />
@@ -378,7 +502,7 @@ function ChatInner({
                       onClick={() => {
                         setSelectedSystemPrompt(sp);
                         log(
-                          `[SYSTEM] System Prompt:  ${sp.system_prompt_content}`,
+                          `[SYSTEM] System Prompt: ${sp.system_prompt_content}`,
                         );
                       }}
                       className={`cursor-pointer text-xs ${
@@ -393,7 +517,6 @@ function ChatInner({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* LLM model selector dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
                   <Cpu className="w-4 h-4 mr-1.5" />
@@ -415,7 +538,7 @@ function ChatInner({
                       key={m.id}
                       onClick={() => {
                         setSelectedModel(m);
-                        log(`[MODEL] Model Shifted To:  ${m.llm_model}`);
+                        log(`[MODEL] Model Shifted To: ${m.llm_model}`);
                       }}
                       className={`cursor-pointer text-xs ${
                         selectedModel?.id === m.id
@@ -429,59 +552,56 @@ function ChatInner({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Save conversation button */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleSave}
-                disabled={saving}
-                className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30"
+                disabled={saving || !messages || messages.length === 0}
+                className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 disabled:opacity-40"
               >
                 <Save className="w-3.5 h-3.5 mr-1" />
                 {saving ? "Saving..." : "SAVE"}
               </Button>
-              {/* Placeholder microphone button (not wired up yet) */}
+
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
                   const next = !enableMic;
                   setEnableMic(next);
-                  log(`[MIC] Mic Set:  ${next}`);
+                  log(`[MIC] Mic Set: ${next}`);
                 }}
                 title={enableMic ? "Microphone On" : "Microphone Off"}
-                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                className={`h-8 w-8 transition-colors ${
                   enableMic
                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-orange-400 bg-cyan-500/20 border-orange-400/60 ]"
+                    : "text-orange-400 bg-cyan-500/20 border-orange-400/60"
                 }`}
               >
                 <Mic className="w-4 h-4" />
               </Button>
-              {/* Placeholder globe/web button (not wired up yet) */}
+
               <Button
                 variant="ghost"
                 size="icon"
-                // className="h-8 w-8 text-cyan-600"
                 onClick={() => {
                   const next = !enableSearch;
                   setEnableSearch(next);
-
-                  log(`[SEARCH] Search Internet Set:  ${next}`);
+                  log(`[SEARCH] Search Internet Set: ${next}`);
                 }}
                 title={enableSearch ? "Internet On" : "Internet Off"}
-                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                className={`h-8 w-8 transition-colors ${
                   enableSearch
                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-red-400 bg-cyan-500/20 border-red-400/60 ]"
+                    : "text-red-400 bg-cyan-500/20 border-red-400/60"
                 }`}
               >
                 <Globe className="w-4 h-4" />
               </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
-                // className="h-8 w-8 text-cyan-600"
                 onClick={() => {
                   const next = !enableRAG;
                   setEnableRAG(next);
@@ -490,14 +610,14 @@ function ChatInner({
                     next
                       ? "color: #22d3ee; font-weight: bold"
                       : "color: #9F9207",
-                    enableRAG ? "info" : "log",
+                    next ? "info" : "log",
                   );
                 }}
                 title={enableRAG ? "RAG On" : "RAG Off"}
-                className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
+                className={`h-8 w-8 transition-colors ${
                   enableRAG
                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-red-400 bg-cyan-500/20 border-red-400/60 ]"
+                    : "text-red-400 bg-cyan-500/20 border-red-400/60"
                 }`}
               >
                 <BookAIcon className="w-4 h-4" />
@@ -507,14 +627,12 @@ function ChatInner({
         />
       </div>
 
-      {/* Toast notification */}
       <div
         className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
           toast.visible
             ? "opacity-100 translate-y-0"
             : "opacity-0 -translate-y-2 pointer-events-none"
         } ${
-          // Cyan styling for success messages, red for everything else
           toast.message.startsWith("✅") || toast.message.includes("success")
             ? "bg-cyan-500/20 text-cyan-100 border-cyan-400/50"
             : "bg-red-500/20 text-red-100 border-red-400/50"
@@ -525,3 +643,701 @@ function ChatInner({
     </div>
   );
 }
+
+// /** biome-ignore-all assist/source/organizeImports: <explanation> */
+// /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
+// "use client";
+
+// import { useEffect, useState, useMemo, useRef } from "react";
+// import { useMcp } from "@/components/mcp_provider";
+// import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
+// import { useConversation } from "@/components/conversation-provider";
+// import {
+//   AssistantRuntimeProvider,
+//   useAuiState,
+//   useAui,
+// } from "@assistant-ui/react";
+// import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+// import { Thread } from "@/components/assistant-ui/elements/thread.aui";
+// import { DefaultChatTransport } from "ai";
+// import { log, LogLevel, logWithColor, styledLog } from "@/lib/logger";
+
+// import {
+//   BrainCircuit,
+//   Mic,
+//   Globe,
+//   Save,
+//   Cpu,
+//   BookAIcon,
+//   ChevronDown,
+//   Plus,
+// } from "lucide-react";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuGroup,
+//   DropdownMenuLabel,
+//   DropdownMenuSeparator,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
+// import { Button } from "@/components/ui/button";
+
+// type LLMModel = {
+//   id: number;
+//   llm_name: string;
+//   llm_apiKey: string;
+//   llm_baseUrl: string;
+//   llm_model: string;
+//   is_default: boolean;
+// };
+
+// type SystemPrompt = {
+//   id: number;
+//   system_prompt_name: string;
+//   system_prompt_content: string;
+//   system_prompt_format?: string;
+//   is_default: boolean;
+// };
+
+// // ============================================================
+// // Outer component
+// // ============================================================
+// export default function ChatPage() {
+//   const [enableRAG, setEnableRAG] = useState(false);
+//   const [enableMic, setEnableMic] = useState(false);
+//   const { selected } = useMcp();
+//   const { selected: selectedSkills } = useSkills();
+
+//   const [deepThink, setDeepThink] = useState(false);
+//   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
+//   const [selectedSystemPrompt, setSelectedSystemPrompt] =
+//     useState<SystemPrompt | null>(null);
+//   const [models, setModels] = useState<LLMModel[]>([]);
+//   const [selectedModel, setSelectedModel] = useState<LLMModel | null>(null);
+//   const MAX_MESSAGES = 10;
+//   const [enableSearch, setEnableSearch] = useState(false);
+
+//   const transport = useMemo(
+//     () =>
+//       new DefaultChatTransport({
+//         api: "/api/chat",
+//         body: (options: any) => {
+//           const allMessages = options?.messages ?? [];
+//           const trimmedMessages =
+//             allMessages.length > MAX_MESSAGES
+//               ? allMessages.slice(-MAX_MESSAGES)
+//               : allMessages;
+
+//           return {
+//             messages: trimmedMessages,
+//             deepThink,
+//             selectedSystemPrompt: selectedSystemPrompt?.system_prompt_content,
+//             llm_apiKey: selectedModel?.llm_apiKey,
+//             llm_baseUrl: selectedModel?.llm_baseUrl,
+//             llm_model: selectedModel?.llm_model,
+//             llm_enable_search: enableSearch,
+//             llm_enable_rag: enableRAG,
+//             llm_enable_mic: enableMic,
+//             mcpServers: selected.map((s) => ({
+//               id: s.id,
+//               name: s.name,
+//               connection_type: s.connection_type,
+//               connection_api: s.connection_api,
+//               auth_type: s.auth_type,
+//               auth_config: s.auth_config,
+//               tools: s.tools,
+//             })),
+//             skills: selectedSkills.map((s) => ({
+//               id: s.id,
+//               name: s.name,
+//               description: s.description,
+//               input_schema: s.input_schema,
+//               output_schema: s.output_schema,
+//               handler_type: s.handler_type,
+//               endpoint: s.endpoint,
+//               handler_ref: s.handler_ref,
+//               auth_type: s.auth_type,
+//             })),
+//           };
+//         },
+//       }),
+//     [
+//       deepThink,
+//       selectedModel,
+//       selectedSystemPrompt,
+//       selected,
+//       selectedSkills,
+//       enableSearch,
+//       enableRAG,
+//       enableMic,
+//     ],
+//   );
+
+//   const runtime = useChatRuntime({
+//     transport,
+//     onData: (dataPart) => {
+//       if (dataPart.type === "data-log") {
+//         const data = dataPart.data as {
+//           level: string;
+//           text: string;
+//           color?: string;
+//           time: string;
+//         };
+//         logWithColor(
+//           (data.level?.toLowerCase() ?? "log") as LogLevel,
+//           data.text,
+//           data.color,
+//         );
+//       }
+//     },
+//   });
+
+//   return (
+//     <AssistantRuntimeProvider runtime={runtime}>
+//       <ChatInner
+//         deepThink={deepThink}
+//         setDeepThink={setDeepThink}
+//         systemPrompts={systemPrompts}
+//         setSystemPrompts={setSystemPrompts}
+//         selectedSystemPrompt={selectedSystemPrompt}
+//         setSelectedSystemPrompt={setSelectedSystemPrompt}
+//         models={models}
+//         setModels={setModels}
+//         selectedModel={selectedModel}
+//         setSelectedModel={setSelectedModel}
+//         enableSearch={enableSearch}
+//         setEnableSearch={setEnableSearch}
+//         enableRAG={enableRAG}
+//         setEnableRAG={setEnableRAG}
+//         enableMic={enableMic}
+//         setEnableMic={setEnableMic}
+//       />
+//     </AssistantRuntimeProvider>
+//   );
+// }
+
+// // ============================================================
+// // Inner component
+// // ============================================================
+// type ChatInnerProps = {
+//   deepThink: boolean;
+//   setDeepThink: (v: boolean) => void;
+//   systemPrompts: SystemPrompt[];
+//   setSystemPrompts: (v: SystemPrompt[]) => void;
+//   selectedSystemPrompt: SystemPrompt | null;
+//   setSelectedSystemPrompt: (v: SystemPrompt | null) => void;
+//   models: LLMModel[];
+//   setModels: (v: LLMModel[]) => void;
+//   selectedModel: LLMModel | null;
+//   setSelectedModel: (v: LLMModel | null) => void;
+//   enableSearch: boolean;
+//   setEnableSearch: (v: boolean) => void;
+//   enableRAG: boolean;
+//   setEnableRAG: (v: boolean) => void;
+//   enableMic: boolean;
+//   setEnableMic: (v: boolean) => void;
+// };
+
+// function ChatInner({
+//   deepThink,
+//   setDeepThink,
+//   systemPrompts,
+//   setSystemPrompts,
+//   selectedSystemPrompt,
+//   setSelectedSystemPrompt,
+//   models,
+//   setModels,
+//   selectedModel,
+//   setSelectedModel,
+//   enableSearch,
+//   setEnableSearch,
+//   enableRAG,
+//   setEnableRAG,
+//   enableMic,
+//   setEnableMic,
+// }: ChatInnerProps) {
+//   const { triggerRefresh, restoreId, clearRestore } = useConversation();
+//   const [saving, setSaving] = useState(false);
+
+//   // 👇 当前会话 ID：有它时保存是更新，没它时是新建
+//   const [conversationId, setConversationId] = useState<number | null>(null);
+
+//   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+//     message: "",
+//     visible: false,
+//   });
+
+//   const showToast = (message: string) => {
+//     setToast({ message, visible: true });
+//     setTimeout(() => {
+//       setToast((prev) => ({ ...prev, visible: false }));
+//     }, 3000);
+//   };
+
+//   const messages = useAuiState((s) => s.thread.messages);
+//   const aui = useAui(); // 👈 用于清空 / 注入消息
+
+//   // 加载 system prompts
+//   useEffect(() => {
+//     fetch("/api/system_prompts")
+//       .then((r) => r.json())
+//       .then((data) => {
+//         const list: SystemPrompt[] = data.system_prompts ?? [];
+//         setSystemPrompts(list);
+//         setSelectedSystemPrompt(
+//           list.find((sp) => sp.is_default) ?? list[0] ?? null,
+//         );
+//       })
+//       .catch((err) => log("Failed to fetch system prompts", err));
+//   }, [setSystemPrompts, setSelectedSystemPrompt]);
+
+//   // 加载 LLM models
+//   useEffect(() => {
+//     fetch("/api/llm")
+//       .then((r) => r.json())
+//       .then((data) => {
+//         const list: LLMModel[] = data.models ?? [];
+//         setModels(list);
+//         setSelectedModel(list.find((m) => m.is_default) ?? list[0] ?? null);
+//       })
+//       .catch((err) => log("Failed to fetch models", err));
+//   }, [setModels, setSelectedModel]);
+
+//   // ============================================================
+//   // 👇 恢复历史会话 - 使用正确的 assistant-ui API（最终版）
+//   // ============================================================
+//   useEffect(() => {
+//     if (restoreId === null) return;
+
+//     // restoreId === 0 → 新会话
+//     if (restoreId === 0) {
+//       try {
+//         aui.thread().reset();
+//         console.log("[restore] 已清空线程");
+//       } catch (err) {
+//         console.error("[restore] reset failed:", err);
+//       }
+//       setConversationId(null);
+//       clearRestore();
+//       return;
+//     }
+
+//     // restoreId > 0 → 恢复历史
+//     (async () => {
+//       try {
+//         console.log(`\n${"=".repeat(60)}`);
+//         console.log(`[restore] 🚀 开始恢复会话 ID: ${restoreId}`);
+//         console.log(`${"=".repeat(60)}\n`);
+
+//         const res = await fetch(`/api/conversation/${restoreId}`);
+//         if (!res.ok) {
+//           throw new Error(`HTTP ${res.status}`);
+//         }
+
+//         const data = await res.json();
+//         console.log("[restore] 📦 API 原始返回:", data);
+//         console.log("[restore] 📝 消息数量:", data.messages?.length || 0);
+
+//         if (!Array.isArray(data?.messages) || data.messages.length === 0) {
+//           throw new Error("无有效消息数据");
+//         }
+
+//         // ✅ 转换为 assistant-ui 需要的格式
+//         const convertedMessages = data.messages
+//           .map((m: any, idx: number) => {
+//             console.log(`\n[restore] 🔍 处理消息 ${idx}:`);
+//             console.log("  - raw data:", m);
+
+//             // 提取文本内容
+//             let textContent = "";
+
+//             // 方式1：从 content 字段（优先）
+//             if (typeof m.content === "string" && m.content.trim()) {
+//               textContent = m.content.trim();
+//               console.log(
+//                 `  ✅ 从 content 字段获取 (${textContent.length} 字符)`,
+//               );
+//             }
+//             // 方式2：从 parts 字段提取
+//             else if (m.parts) {
+//               let parts = m.parts;
+//               if (typeof parts === "string") {
+//                 try {
+//                   parts = JSON.parse(parts);
+//                 } catch (e) {
+//                   parts = [];
+//                 }
+//               }
+
+//               if (Array.isArray(parts)) {
+//                 textContent = parts
+//                   .filter((p: any) => p && p.type === "text")
+//                   .map((p: any) => p.text || "")
+//                   .join("");
+//                 console.log(`  ✅ 从 parts 提取 (${textContent.length} 字符)`);
+//               }
+//             }
+
+//             // 构建符合 assistant-ui 格式的消息
+//             const message = {
+//               id: m.id || `restored-${idx}`,
+//               role: m.role,
+//               createdAt: new Date(),
+//               content: textContent
+//                 ? [
+//                     {
+//                       type: "text",
+//                       text: textContent,
+//                     },
+//                   ]
+//                 : [],
+//             };
+
+//             console.log("  📤 转换结果:", {
+//               id: message.id,
+//               role: message.role,
+//               contentLength: textContent.length,
+//               preview:
+//                 textContent.substring(0, 30) +
+//                 (textContent.length > 30 ? "..." : ""),
+//             });
+
+//             return message;
+//           })
+//           .filter((m: any) => m.content && m.content.length > 0);
+
+//         console.log(
+//           `\n[restore] ✨ 转换完成，有效消息: ${convertedMessages.length}/${data.messages.length}`,
+//         );
+
+//         if (convertedMessages.length === 0) {
+//           throw new Error("所有消息内容均为空");
+//         }
+
+//         // ✅✅✅ 关键：使用正确的 assistant-ui API 注入消息
+//         console.log("\n[restore] ⚡ 准备注入消息到线程...");
+//         console.log(
+//           "[restore] 第一条消息示例:",
+//           JSON.stringify(convertedMessages[0], null, 2),
+//         );
+
+//         // 方法1：尝试使用 reset（当前方式）
+//         try {
+//           // @ts-ignore - 绕过类型检查
+//           aui.thread().reset(convertedMessages);
+//           console.log("[reset] ✅ reset() 调用成功");
+//         } catch (err) {
+//           console.error("[reset] ❌ reset() 失败:", err);
+
+//           // 方法2：如果 reset 失败，尝试逐条添加
+//           console.log("[restore] 尝试备用方法...");
+//           try {
+//             aui.thread().reset(); // 先清空
+
+//             for (const msg of convertedMessages) {
+//               if (msg.role === "user") {
+//                 // @ts-ignore
+//                 aui.thread().sendMessage(msg.content[0]?.text || "");
+//               } else if (msg.role === "assistant") {
+//                 // @ts-ignore
+//                 aui.thread().append(msg);
+//               }
+//             }
+//             console.log("[restore] ✅ 逐条添加成功");
+//           } catch (err2) {
+//             console.error("[restore] ❌ 备用方法也失败:", err2);
+//             throw err2;
+//           }
+//         }
+
+//         // 设置会话ID并显示成功提示
+//         setConversationId(restoreId);
+//         showToast("✅ 会话已恢复");
+
+//         // 延迟检查实际状态
+//         setTimeout(() => {
+//           try {
+//             const state = aui.thread().getState();
+//             console.log("\n[render check] 📊 线程状态:");
+//             console.log("  - 消息总数:", state.messages?.length || 0);
+//             console.log(
+//               "  - 前3条消息:",
+//               state.messages?.slice(0, 3)?.map((m: any) => ({
+//                 role: m.role,
+//                 contentLength: JSON.stringify(m.content)?.length || 0,
+//               })),
+//             );
+
+//             if ((state.messages?.length || 0) === 0) {
+//               console.warn("⚠️ 线程中仍然没有消息！可能需要刷新页面");
+//             }
+//           } catch (e) {
+//             console.error("[render check] 获取状态失败:", e);
+//           }
+//         }, 200);
+
+//         console.log(`\n${"=".repeat(60)}`);
+//         console.log(`[restore] 🎉 恢复完成！会话 ID: ${restoreId}`);
+//         console.log(`${"=".repeat(60)}\n`);
+//       } catch (err) {
+//         console.error("\n[restore] ❌❌❌ 恢复失败:", err);
+//         showToast("❌ 恢复会话失败: " + (err as Error).message);
+//       } finally {
+//         clearRestore();
+//       }
+//     })();
+//   }, [restoreId, clearRestore, aui]);
+
+//   // 保存会话（有 ID 就更新，没有就新建）
+//   const handleSave = async () => {
+//     if (!messages?.length) {
+//       showToast("❌ No messages to save");
+//       return;
+//     }
+//     setSaving(true);
+//     try {
+//       const res = await fetch("/api/conversation/save", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           conversationId, // 👈 有就更新
+//           model: selectedModel?.llm_model,
+//           systemPrompt: selectedSystemPrompt?.system_prompt_name,
+//           messages: messages.map((m) => ({
+//             id: m.id,
+//             role: m.role,
+//             parts: m.parts,
+//           })),
+//         }),
+//       });
+//       const data = await res.json();
+//       if (data.conversationId) {
+//         setConversationId(data.conversationId); // 👈 记住 ID
+//         triggerRefresh();
+//         showToast("✅ Conversation saved");
+//       } else {
+//         showToast("❌ Save failed");
+//       }
+//     } catch (err) {
+//       showToast("❌ Save failed");
+//       log("Save failed", err);
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // 新会话
+//   const handleNewChat = () => {
+//     aui.thread().reset();
+//     setConversationId(null);
+//     showToast("✨ New conversation");
+//   };
+
+//   return (
+//     <div className="h-full w-full flex flex-col">
+//       <div className="flex-1 min-h-0 overflow-hidden">
+//         <Thread
+//           composerToolbar={
+//             <div className="flex items-center gap-2 flex-wrap">
+//               {/* New Chat */}
+//               <Button
+//                 variant="ghost"
+//                 size="sm"
+//                 onClick={handleNewChat}
+//                 className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 hover:bg-cyan-500/10"
+//                 title="New Conversation"
+//               >
+//                 <Plus className="w-3.5 h-3.5 mr-1" />
+//                 NEW
+//               </Button>
+
+//               {/* DeepThink */}
+//               <Button
+//                 variant="ghost"
+//                 type="button"
+//                 onClick={() => {
+//                   const next = !deepThink;
+//                   setDeepThink(next);
+//                   log(`[DEEP_THINK] DeepThink shifted: ${next}`);
+//                 }}
+//                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
+//                   deepThink
+//                     ? "bg-cyan-500/30 text-cyan-400 border-cyan-600/80"
+//                     : "bg-slate-900/60 text-slate-100 border-cyan-400/20"
+//                 }`}
+//               >
+//                 <BrainCircuit className="w-4 h-4 mr-1.5" />
+//                 {deepThink ? "DeepThink On" : "DeepThink Off"}
+//               </Button>
+
+//               {/* System Prompt */}
+//               <DropdownMenu>
+//                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
+//                   <BookAIcon className="w-4 h-4 mr-1.5" />
+//                   {selectedSystemPrompt?.system_prompt_name ?? "Prompt"}
+//                   <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+//                 </DropdownMenuTrigger>
+//                 <DropdownMenuContent
+//                   align="start"
+//                   className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100"
+//                 >
+//                   <DropdownMenuGroup>
+//                     <DropdownMenuLabel className="text-xs text-cyan-400">
+//                       SYSTEM PROMPT
+//                     </DropdownMenuLabel>
+//                   </DropdownMenuGroup>
+//                   <DropdownMenuSeparator className="bg-cyan-400/20" />
+//                   {systemPrompts.map((sp) => (
+//                     <DropdownMenuItem
+//                       key={sp.id}
+//                       onClick={() => {
+//                         setSelectedSystemPrompt(sp);
+//                         log(
+//                           `[SYSTEM] System Prompt: ${sp.system_prompt_content}`,
+//                         );
+//                       }}
+//                       className={`cursor-pointer text-xs ${
+//                         selectedSystemPrompt?.id === sp.id
+//                           ? "bg-cyan-200/10 text-cyan-500"
+//                           : ""
+//                       }`}
+//                     >
+//                       📜 {sp.system_prompt_name}
+//                     </DropdownMenuItem>
+//                   ))}
+//                 </DropdownMenuContent>
+//               </DropdownMenu>
+
+//               {/* Model */}
+//               <DropdownMenu>
+//                 <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
+//                   <Cpu className="w-4 h-4 mr-1.5" />
+//                   {selectedModel?.llm_model ?? "Model"}
+//                   <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+//                 </DropdownMenuTrigger>
+//                 <DropdownMenuContent
+//                   align="start"
+//                   className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100"
+//                 >
+//                   <DropdownMenuGroup>
+//                     <DropdownMenuLabel className="text-xs text-cyan-400">
+//                       SELECT MODEL
+//                     </DropdownMenuLabel>
+//                   </DropdownMenuGroup>
+//                   <DropdownMenuSeparator className="bg-cyan-400/20" />
+//                   {models.map((m) => (
+//                     <DropdownMenuItem
+//                       key={m.id}
+//                       onClick={() => {
+//                         setSelectedModel(m);
+//                         log(`[MODEL] Model Shifted To: ${m.llm_model}`);
+//                       }}
+//                       className={`cursor-pointer text-xs ${
+//                         selectedModel?.id === m.id
+//                           ? "bg-cyan-500/10 text-cyan-300"
+//                           : ""
+//                       }`}
+//                     >
+//                       🚀 {m.llm_model}
+//                     </DropdownMenuItem>
+//                   ))}
+//                 </DropdownMenuContent>
+//               </DropdownMenu>
+
+//               {/* Save */}
+//               <Button
+//                 variant="ghost"
+//                 size="sm"
+//                 onClick={handleSave}
+//                 disabled={saving || !messages?.length}
+//                 className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 disabled:opacity-40"
+//               >
+//                 <Save className="w-3.5 h-3.5 mr-1" />
+//                 {saving ? "Saving..." : "SAVE"}
+//               </Button>
+
+//               {/* Mic */}
+//               <Button
+//                 variant="ghost"
+//                 size="icon"
+//                 onClick={() => {
+//                   const next = !enableMic;
+//                   setEnableMic(next);
+//                   log(`[MIC] Mic Set: ${next}`);
+//                 }}
+//                 title={enableMic ? "Microphone On" : "Microphone Off"}
+//                 className={`h-8 w-8 transition-colors ${
+//                   enableMic
+//                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+//                     : "text-orange-400 bg-cyan-500/20 border-orange-400/60"
+//                 }`}
+//               >
+//                 <Mic className="w-4 h-4" />
+//               </Button>
+
+//               {/* Web Search */}
+//               <Button
+//                 variant="ghost"
+//                 size="icon"
+//                 onClick={() => {
+//                   const next = !enableSearch;
+//                   setEnableSearch(next);
+//                   log(`[SEARCH] Search Internet Set: ${next}`);
+//                 }}
+//                 title={enableSearch ? "Internet On" : "Internet Off"}
+//                 className={`h-8 w-8 transition-colors ${
+//                   enableSearch
+//                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+//                     : "text-red-400 bg-cyan-500/20 border-red-400/60"
+//                 }`}
+//               >
+//                 <Globe className="w-4 h-4" />
+//               </Button>
+
+//               {/* RAG */}
+//               <Button
+//                 variant="ghost"
+//                 size="icon"
+//                 onClick={() => {
+//                   const next = !enableRAG;
+//                   setEnableRAG(next);
+//                   styledLog(
+//                     `[RAG] RAG Set: ${next}`,
+//                     next
+//                       ? "color: #22d3ee; font-weight: bold"
+//                       : "color: #9F9207",
+//                     next ? "info" : "log",
+//                   );
+//                 }}
+//                 title={enableRAG ? "RAG On" : "RAG Off"}
+//                 className={`h-8 w-8 transition-colors ${
+//                   enableRAG
+//                     ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
+//                     : "text-red-400 bg-cyan-500/20 border-red-400/60"
+//                 }`}
+//               >
+//                 <BookAIcon className="w-4 h-4" />
+//               </Button>
+//             </div>
+//           }
+//         />
+//       </div>
+
+//       {/* Toast */}
+//       <div
+//         className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
+//           toast.visible
+//             ? "opacity-100 translate-y-0"
+//             : "opacity-0 -translate-y-2 pointer-events-none"
+//         } ${
+//           toast.message.startsWith("✅") || toast.message.includes("success")
+//             ? "bg-cyan-500/20 text-cyan-100 border-cyan-400/50"
+//             : "bg-red-500/20 text-red-100 border-red-400/50"
+//         }`}
+//       >
+//         {toast.message}
+//       </div>
+//     </div>
+//   );
+// }

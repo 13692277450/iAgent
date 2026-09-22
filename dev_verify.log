@@ -1,0 +1,251 @@
+
+> iagent@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.10.101:3000
+- Environments: .env
+✓ Ready in 550ms
+✓ Running next.config.ts took 40ms
+
+ GET /api/conversation/list 200 in 1554ms (next.js: 281ms, application-code: 1274ms)
+ GET /api/conversation/15 404 in 2.0s (next.js: 1684ms, application-code: 320ms)
+ GET /api/token 401 in 571ms (next.js: 553ms, application-code: 18ms)
+ GET /api/token 200 in 1743ms (next.js: 7ms, application-code: 1736ms)
+ GET /api/conversation/list 200 in 326ms (next.js: 10ms, application-code: 317ms)
+[list-debug] session: {"username":"{username:ivancheung,department:HR}"} username: "{username:ivancheung,department:HR}"
+[list-debug] rows: 0
+ GET /api/conversation/list 200 in 1712ms (next.js: 11ms, application-code: 1700ms)
+[list-debug] session: {"username":"ivancheung","department":"HR"} username: "ivancheung"
+[list-debug] rows: 3
+ GET /api/conversation/list 200 in 1504ms (next.js: 5ms, application-code: 1499ms)
+[API/15] 查询到 2 条消息
+[API/15] 消息 0: {
+  id: '100',
+  role: 'user',
+  hasContent: true,
+  contentLength: 8,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/15] 消息 1: {
+  id: '101',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 62,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/15] 最终返回: {
+  "id": "100",
+  "role": "user",
+  "content": "你是谁kimi吗",
+  "parts": [
+    {
+      "text": "你是谁kimi吗",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/15 200 in 502ms (next.js: 25ms, application-code: 477ms)
+ChatPage rendering...
+[90m[17:01:16][0m [37m[LOG  ][0m ChatPage rendering...
+Session: { username: 'ivancheung', department: 'HR' }
+ GET /chat 200 in 1465ms (next.js: 165ms, application-code: 1300ms)
+ GET /api/conversation/list 200 in 1210ms (next.js: 22ms, application-code: 1188ms)
+[API/14] 查询到 2 条消息
+[API/14] 消息 0: {
+  id: '98',
+  role: 'user',
+  hasContent: true,
+  contentLength: 3,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/14] 消息 1: {
+  id: '99',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 120,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/14] 最终返回: {
+  "id": "98",
+  "role": "user",
+  "content": "你谁啊",
+  "parts": [
+    {
+      "text": "你谁啊",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/14 200 in 483ms (next.js: 16ms, application-code: 466ms)
+ChatPage rendering...
+[90m[18:19:00][0m [37m[LOG  ][0m ChatPage rendering...
+Session: { username: 'ivancheung' }
+ GET /chat 200 in 338ms (next.js: 68ms, application-code: 270ms)
+ GET /api/conversation/list?t=0 200 in 372ms (next.js: 10ms, application-code: 362ms)
+ GET /api/system_prompts 200 in 1951ms (next.js: 423ms, application-code: 1528ms)
+ GET /api/llm 200 in 1953ms (next.js: 639ms, application-code: 1314ms)
+ GET /api/rag/sources 200 in 2.0s (next.js: 263ms, application-code: 1739ms)
+ChatPage rendering...
+[90m[18:19:03][0m [37m[LOG  ][0m ChatPage rendering...
+Session: { username: 'ivancheung' }
+ GET /api/mcp 200 in 2.2s (next.js: 949ms, application-code: 1206ms)
+ GET /api/rag/sources 200 in 3.7s (next.js: 25ms, application-code: 3.7s)
+ GET /api/skills 200 in 2.7s (next.js: 99ms, application-code: 2.6s)
+ GET /api/conversation/list?t=0 200 in 3.7s (next.js: 13ms, application-code: 3.7s)
+ GET /api/system_prompts 200 in 2.7s (next.js: 109ms, application-code: 2.6s)
+ GET /api/mcp 200 in 43ms (next.js: 17ms, application-code: 26ms)
+ GET /api/llm 200 in 64ms (next.js: 9ms, application-code: 55ms)
+ GET /chat 200 in 2.9s (next.js: 28ms, application-code: 2.9s)
+ GET /api/conversation/list?t=0 200 in 134ms (next.js: 10ms, application-code: 124ms)
+ GET /api/skills 200 in 84ms (next.js: 63ms, application-code: 20ms)
+ GET /api/rag/sources 200 in 284ms (next.js: 24ms, application-code: 261ms)
+ GET /api/llm 200 in 262ms (next.js: 15ms, application-code: 246ms)
+ GET /api/system_prompts 200 in 265ms (next.js: 28ms, application-code: 237ms)
+ GET /api/mcp 200 in 286ms (next.js: 44ms, application-code: 242ms)
+ GET /api/rag/sources 200 in 310ms (next.js: 27ms, application-code: 284ms)
+ GET /api/conversation/list?t=0 200 in 326ms (next.js: 10ms, application-code: 317ms)
+ GET /api/skills 200 in 261ms (next.js: 7ms, application-code: 254ms)
+ GET /api/llm 200 in 252ms (next.js: 9ms, application-code: 243ms)
+ GET /api/system_prompts 200 in 251ms (next.js: 14ms, application-code: 237ms)
+ GET /api/mcp 200 in 288ms (next.js: 17ms, application-code: 270ms)
+[API/15] 查询到 2 条消息
+[API/15] 消息 0: {
+  id: '100',
+  role: 'user',
+  hasContent: true,
+  contentLength: 8,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/15] 消息 1: {
+  id: '101',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 62,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/15] 最终返回: {
+  "id": "100",
+  "role": "user",
+  "content": "你是谁kimi吗",
+  "parts": [
+    {
+      "text": "你是谁kimi吗",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/15 200 in 512ms (next.js: 28ms, application-code: 484ms)
+[API/14] 查询到 2 条消息
+[API/14] 消息 0: {
+  id: '98',
+  role: 'user',
+  hasContent: true,
+  contentLength: 3,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/14] 消息 1: {
+  id: '99',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 120,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/14] 最终返回: {
+  "id": "98",
+  "role": "user",
+  "content": "你谁啊",
+  "parts": [
+    {
+      "text": "你谁啊",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/14 200 in 489ms (next.js: 18ms, application-code: 470ms)
+[API/13] 查询到 2 条消息
+[API/13] 消息 0: {
+  id: '94',
+  role: 'user',
+  hasContent: true,
+  contentLength: 8,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/13] 消息 1: {
+  id: '95',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 1526,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/13] 最终返回: {
+  "id": "94",
+  "role": "user",
+  "content": "公司财务报销制度",
+  "parts": [
+    {
+      "text": "公司财务报销制度",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/13 200 in 494ms (next.js: 25ms, application-code: 469ms)
+[API/13] 查询到 2 条消息
+[API/13] 消息 0: {
+  id: '94',
+  role: 'user',
+  hasContent: true,
+  contentLength: 8,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/13] 消息 1: {
+  id: '95',
+  role: 'assistant',
+  hasContent: true,
+  contentLength: 1526,
+  hasParts: true,
+  partsType: 'object'
+}
+[API/13] 最终返回: {
+  "id": "94",
+  "role": "user",
+  "content": "公司财务报销制度",
+  "parts": [
+    {
+      "text": "公司财务报销制度",
+      "type": "text",
+      "status": {
+        "type": "complete"
+      }
+    }
+  ]
+}
+ GET /api/conversation/13 200 in 513ms (next.js: 31ms, application-code: 482ms)
+[?25h

@@ -31,7 +31,7 @@ export default function RagCard({
             setOpen(true);
           }
         }}
-        className="group flex w-[260px] cursor-pointer flex-col rounded-xl border border-slate-700 bg-slate-800 p-5 text-left shadow-lg transition hover:border-blue-500 hover:bg-slate-750"
+        className="group flex flex-full cursor-pointer flex-col rounded-xl border border-slate-700 bg-slate-800 p-5 text-left shadow-lg transition hover:border-blue-500 hover:bg-slate-750"
       >
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-slate-100">{name}</h3>

@@ -1,0 +1,2 @@
+# Netscape HTTP Cookie File
+localhost	FALSE	/	FALSE	0	iagent_session	{"username":"ivancheung","department":"HR"}

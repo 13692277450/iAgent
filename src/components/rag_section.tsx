@@ -30,9 +30,9 @@ export default function RagSection() {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-4 flex-col flex-full max-h-[80vh] overflow-auto">
+      <div className="flex flex-wrap gap-4 flex-col flex-full  overflow-auto">
         <RagCard
-          name="RAG Server"
+          name="RAG DATA"
           status="online"
           sourceCount={count}
           onRefresh={handleRefresh}

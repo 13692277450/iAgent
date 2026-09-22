@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     skills = [],
     inputTokens = 0,
     llm_enable_rag = false,
+    
   }: {
     messages: UIMessage[];
     deepThink: boolean;
@@ -59,8 +60,8 @@ export async function POST(req: Request) {
   const allTools = { ...ALL_TOOLS, ...mcpTools, ...skillTools };
 
   console.log("[TOOLS] Available:", Object.keys(allTools));
-  const logs: { level: string; text: string }[] = [];
-  const pendingLogs = (level: string, text: string) => {logs.push({level, text})}
+  const logs: { level: string; text: string; color: string }[] = [];
+  const pendingLogs = (level: string, text: string, color: string) => {logs.push({level, text, color})}
 
  // ==================== RAG 检索 ====================
 let ragContext = "";
@@ -86,9 +87,9 @@ try {
     });
 
     if (ragSources.length > 0) {
-          pendingLogs("INFO", `[RAG] Indexed ${ragSources.length} pcs of segment`);
+          pendingLogs("INFO", `[RAG] Indexed ${ragSources.length} pcs of segment`, "blue");
         ragSources.forEach((s, i) => {
-        pendingLogs("LOG", `[RAG ${i + 1}] 《${s.title}》\n Similarity: ${s.similarity.toFixed(3)}`);
+        pendingLogs("LOG", `[RAG ${i + 1}] 《${s.title}》\n Similarity: ${s.similarity.toFixed(3)}`, "purple");
   });
       ragContext = ragSources
         .map((c, i) => `[${i + 1}] From ${c.title}\n${c.content}`)
@@ -102,11 +103,11 @@ try {
 } catch (err) {
   console.error("[RAG] search failed:", err);
   // indexed failed, continue to normal flow
-  pendingLogs("ERROR", `[RAG ERROR] Search failed: ${err}`);
+  pendingLogs("ERROR", `[RAG ERROR] Search failed: ${err}`, "red");
 }
  }
 
-// ==================== 构建 system prompt ====================
+// ==================== Build system prompt ====================
   const basePrompt =
     selectedSystemPrompt ||
     "You are a smart assistant, you can answer any question.";
@@ -200,23 +201,24 @@ ${ragContext}
   // ====================  UI message stream，combine result and log ====================
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      const sendLog = (level: string, text: string) => {
+      const sendLog = (level: string, text: string, color: string) => {
         writer.write({
           type: "data-log",
           data: {
             level,
             text,
+            color,
             time: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
           },
         });
       };
 
       // sendLog("INFO", `[Requesting]: model=${llm_model}, tools=${Object.keys(allTools).length}`);
-      sendLog("LOG", `[TOOLS]: ${Object.keys(allTools).join(", ")}`);
-      sendLog("INFO", `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`);
-      sendLog("INFO", `[SKILLS] : ${skills.length??0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`);
-      sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`);
-      logs.forEach((l) => sendLog(`"RAG" [${l.level}]`, l.text));
+      sendLog("LOG", `[TOOLS]: ${Object.keys(allTools).join(", ")} `, "text-purple-400");
+      sendLog("INFO", `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`, "text-purple-400");
+      sendLog("INFO", `[SKILLS] : ${skills.length??0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`, "blue");
+      sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`, "purple");
+      logs.forEach((l) => sendLog(`"RAG" [${l.level}]`, l.text, "orange"));
       console.log("[CHAT] skills 数量:", skills?.length ?? 0);            // 🚨 加这行
       console.log("[CHAT] skills 详情:", JSON.stringify(skills, null, 2)); // 🚨 加这行
       // sendLog("LOG", `[SKILLS] count=${skills?.length ?? 0}, names=${skills?.map((s) => s.name).join(", ") ?? ""}`);
