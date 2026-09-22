@@ -1,4 +1,5 @@
 // src/app/api/chat/route.ts
+/** biome-ignore-all lint/suspicious/useIterableCallbackReturn: <explanation> */
 import { getSession } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { log } from "@/lib/logger";
@@ -19,7 +20,7 @@ import { searchRAG } from "@/lib/rag";
 import { getSessionDepartment } from "@/lib/auth";
 export async function POST(req: Request) {
   const session = await getSession();
-  const username = session ?? "anonymous";
+  const username = session?.username ?? "anonymous";
 
   const body = await req.json();
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
     mcpServers = [],
     skills = [],
     inputTokens = 0,
+    llm_enable_rag = false,
   }: {
     messages: UIMessage[];
     deepThink: boolean;
@@ -43,7 +45,9 @@ export async function POST(req: Request) {
     mcpServers?: any[];
     skills?: any[];
     inputTokens?: number;
+    llm_enable_rag?: boolean;
   } = body;
+  // const enableRAG = body.llm_enable_rag //?? false;
 
   console.log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
   // log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
@@ -55,13 +59,13 @@ export async function POST(req: Request) {
   const allTools = { ...ALL_TOOLS, ...mcpTools, ...skillTools };
 
   console.log("[TOOLS] Available:", Object.keys(allTools));
-
+  const logs: { level: string; text: string }[] = [];
+  const pendingLogs = (level: string, text: string) => {logs.push({level, text})}
 
  // ==================== RAG 检索 ====================
-const enableRAG = body.enableRAG ?? false;
 let ragContext = "";
 let ragSources: any[] = [];
- if(enableRAG){
+ if(llm_enable_rag){
 try {
   // 取最后一条用户消息
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
@@ -82,8 +86,12 @@ try {
     });
 
     if (ragSources.length > 0) {
+          pendingLogs("INFO", `[RAG] Indexed ${ragSources.length} pcs of segment`);
+        ragSources.forEach((s, i) => {
+        pendingLogs("LOG", `[RAG ${i + 1}] 《${s.title}》\n Similarity: ${s.similarity.toFixed(3)}`);
+  });
       ragContext = ragSources
-        .map((c, i) => `[${i + 1}] 来自《${c.title}》\n${c.content}`)
+        .map((c, i) => `[${i + 1}] From ${c.title}\n${c.content}`)
         .join("\n\n");
     }
 
@@ -93,7 +101,8 @@ try {
   }
 } catch (err) {
   console.error("[RAG] search failed:", err);
-  // 检索失败不阻断对话，继续走正常流程
+  // indexed failed, continue to normal flow
+  pendingLogs("ERROR", `[RAG ERROR] Search failed: ${err}`);
 }
  }
 
@@ -105,14 +114,16 @@ try {
   const systemPrompt = ragContext
     ? `${basePrompt}
 
-  你是一个企业知识库助手。请严格根据以下参考资料回答问题。
-  如果资料中没有相关信息，请明确告知"根据现有资料无法回答"。
-  回答时请在末尾标注引用的资料编号，格式为 [1]、[2]。
+【重要指令】你必须优先使用下面的参考资料回答问题。
+- 如果参考资料中有相关信息，必须基于参考资料回答，并标注引用编号 [1]、[2]
+- 如果参考资料中没有相关信息，明确回复"根据现有资料无法回答"
+- 不要用你自己的知识替代参考资料
 
-  === 参考资料 ===
-  ${ragContext}
-  === 资料结束 ===
-  `
+=== 参考资料 ===
+${ragContext}
+=== 资料结束 ===
+
+注意：当前没有检索到相关企业文档。如果用户询问公司制度、政策、流程相关的问题，请提示用户开启知识库或联系管理员。`
     : basePrompt;
   
 
@@ -205,6 +216,7 @@ try {
       sendLog("INFO", `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`);
       sendLog("INFO", `[SKILLS] : ${skills.length??0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`);
       sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`);
+      logs.forEach((l) => sendLog(`"RAG" [${l.level}]`, l.text));
       console.log("[CHAT] skills 数量:", skills?.length ?? 0);            // 🚨 加这行
       console.log("[CHAT] skills 详情:", JSON.stringify(skills, null, 2)); // 🚨 加这行
       // sendLog("LOG", `[SKILLS] count=${skills?.length ?? 0}, names=${skills?.map((s) => s.name).join(", ") ?? ""}`);

@@ -50,7 +50,7 @@ export default function Layout() {
         {/* <h1 className="text-xl font-bold">🦚 iAgent</h1> */}
         <Image
           src="/iAgentLogo.png"
-          // loading="lazy"
+          loading="eager"
           alt="iAgent"
           width={100}
           height={24}

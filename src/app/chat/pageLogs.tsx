@@ -5,12 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Trash2, ArrowDownToLine } from "lucide-react";
 import { useLogs } from "@/hooks/use-logs";
 
+const COLOR_MAP: Record<string, string> = {
+  cyan: "text-cyan-400",
+  purple: "text-purple-400",
+  yellow: "text-yellow-400",
+  red: "text-red-400",
+  green: "text-emerald-400",
+  orange: "text-orange-400",
+  blue: "text-blue-400",
+  slate: "text-slate-200",
+};
 const LEVEL_STYLE: Record<string, string> = {
-  log: "text-slate-200",
-  info: "text-cyan-300",
-  warn: "text-yellow-300",
-  error: "text-red-400",
-  debug: "text-slate-400",
+  LOG: "text-slate-200",
+  INFO: "text-cyan-300",
+  WARN: "text-yellow-300",
+  ERROR: "text-red-400",
+  DEBUG: "text-slate-400",
+  RAG: "text-cyan-400",
+  TOOLS: "text-purple-400",
 };
 
 export function LogCard() {
@@ -86,9 +98,20 @@ export function LogCard() {
                 </div>
 
                 {/* 内容：正常字号、按级别着色、在下面，从行首开始 */}
-                <div
+                {/* <div
                   className={`whitespace-pre-wrap break-all text-[12px] ${
                     LEVEL_STYLE[l.level] ?? "text-slate-200"
+                  }`}
+                >
+                  {l.text}
+                </div> */}
+                <div
+                  className={`whitespace-pre-wrap break-all text-[12px] ${
+                    l.color
+                      ? (COLOR_MAP[l.color] ??
+                        LEVEL_STYLE[l.level] ??
+                        "text-slate-200")
+                      : (LEVEL_STYLE[l.level] ?? "text-slate-200")
                   }`}
                 >
                   {l.text}

@@ -1,3 +1,4 @@
+/** biome-ignore-all assist/source/organizeImports: <explanation> */
 "use client"; // Marks this file as a Client Component in Next.js App Router
 
 // React hooks for side effects, state, and memoization
@@ -15,7 +16,7 @@ import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 // Transport layer that posts chat requests to an API route
 import { DefaultChatTransport } from "ai";
 // Simple logger utility
-import { log } from "@/lib/logger";
+import { log, LogLevel, logWithColor, styledLog } from "@/lib/logger";
 
 // Icon set used in the composer toolbar
 import {
@@ -167,9 +168,14 @@ export default function ChatPage() {
         const data = dataPart.data as {
           level: string;
           text: string;
+          color?: string;
           time: string;
         };
-
+        logWithColor(
+          (data.level?.toLowerCase() ?? "log") as LogLevel,
+          data.text,
+          data.color,
+        );
         log(data.text);
       }
     },
@@ -321,7 +327,9 @@ function ChatInner({
       setSaving(false);
     }
   };
-
+  // useEffect(() => {
+  //   log(`[RAG] status: ${enableRAG}`);
+  // }, [enableRAG]);
   return (
     <div className="h-full w-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -335,7 +343,7 @@ function ChatInner({
                 type="button"
                 onClick={() => {
                   setDeepThink(!deepThink);
-                  log(`DeepThink shifted: ${!deepThink}`);
+                  log(`[DEEP_THINK] DeepThink shifted: ${!deepThink}`);
                 }}
                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                   deepThink
@@ -369,7 +377,9 @@ function ChatInner({
                       key={sp.id}
                       onClick={() => {
                         setSelectedSystemPrompt(sp);
-                        log(`System Prompt:  ${sp.system_prompt_content}`);
+                        log(
+                          `[SYSTEM] System Prompt:  ${sp.system_prompt_content}`,
+                        );
                       }}
                       className={`cursor-pointer text-xs ${
                         selectedSystemPrompt?.id === sp.id
@@ -405,7 +415,7 @@ function ChatInner({
                       key={m.id}
                       onClick={() => {
                         setSelectedModel(m);
-                        log(`Model Shifted To:  ${m.llm_model}`);
+                        log(`[MODEL] Model Shifted To:  ${m.llm_model}`);
                       }}
                       className={`cursor-pointer text-xs ${
                         selectedModel?.id === m.id
@@ -435,9 +445,9 @@ function ChatInner({
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  setEnableMic(!enableMic);
-                  log(`Mic Enabled:  ${enableMic}`);
-                  log(`Mic Enabled:  ${enableMic}`);
+                  const next = !enableMic;
+                  setEnableMic(next);
+                  log(`[MIC] Mic Set:  ${next}`);
                 }}
                 title={enableMic ? "Microphone On" : "Microphone Off"}
                 className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
@@ -454,9 +464,10 @@ function ChatInner({
                 size="icon"
                 // className="h-8 w-8 text-cyan-600"
                 onClick={() => {
-                  setEnableSearch(!enableSearch);
+                  const next = !enableSearch;
+                  setEnableSearch(next);
 
-                  log(`Search Enabled:  ${!enableSearch}`);
+                  log(`[SEARCH] Search Internet Set:  ${next}`);
                 }}
                 title={enableSearch ? "Internet On" : "Internet Off"}
                 className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${
@@ -472,9 +483,15 @@ function ChatInner({
                 size="icon"
                 // className="h-8 w-8 text-cyan-600"
                 onClick={() => {
-                  setEnableRAG(!enableRAG);
-
-                  log(`RAG Enabled: ${!enableRAG}`);
+                  const next = !enableRAG;
+                  setEnableRAG(next);
+                  styledLog(
+                    `[RAG] RAG Set: ${next}`,
+                    next
+                      ? "color: #22d3ee; font-weight: bold"
+                      : "color: #9F9207",
+                    enableRAG ? "info" : "log",
+                  );
                 }}
                 title={enableRAG ? "RAG On" : "RAG Off"}
                 className={`h-8 w-8 transition-colors shimmer-color-amber-500 ${

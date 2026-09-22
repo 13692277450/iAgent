@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     // 1. 把用户问题向量化
     const queryEmbedding = await embedOne(question);
     log(`queryEmbedding: ${JSON.stringify(queryEmbedding)}`);
-    console.log("RAG queryEmbedding:", queryEmbedding);
+    console.log("[RAG] queryEmbedding:", queryEmbedding);
     // 2. pgvector 相似度检索（部门可选）
     const sql = `
       SELECT

@@ -22,3 +22,4 @@ export function useLogs(max = 500) {
   const clear = () => setLogs([]);
   return { logs, clear };
 }
+
