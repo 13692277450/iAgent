@@ -58,3 +58,7 @@ MCP Server option
 2026-09-20 shift to assistant-UI, add dark/light mode, add Rag data upload, add save coversation history.
 
 ![alt text](image-6.png)
+
+2026-09-24 add remote logger to log APP running conosle logs and append to database. add AI sevice robot to handle customer support. add mangement panel to CRUD skills, MCP servers, system_prompts, LLMs,.
+
+![alt text](image-7.png)
