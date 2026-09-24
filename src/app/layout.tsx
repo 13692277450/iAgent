@@ -37,3 +37,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+// instrumentation.ts（Next.js 的启动钩子）

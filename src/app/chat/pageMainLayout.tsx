@@ -24,6 +24,8 @@ import { Moon, Sun } from "lucide-react";
 import { Session } from "inspector";
 import { getSession } from "@/lib/auth";
 import Image from "next/image";
+import { SystemSettingsCard } from "@/components/SystemSettingsCard";
+import { SupportChatBubble } from "@/components/SupportChatBubble";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -91,8 +93,8 @@ export default function Layout() {
           <SkillsSelectedCard />
           <McpSelectedCard />
           <RagSection />
-
-          <Card className="bg-card shadow-none border-none">
+          <SystemSettingsCard />
+          {/* <Card className="bg-card shadow-none border-none">
             <CardHeader>
               <CardTitle className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 SYSTEM CENTER
@@ -111,7 +113,7 @@ export default function Layout() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* 中间竖条 - 核心内容区 */}
@@ -137,6 +139,7 @@ export default function Layout() {
             <LogCard />
           </div>
           <div className="h-px mx-4 bg-cyan-400/20 shrink-0 mb-3" />
+          <SupportChatBubble />
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ export const weatherTool = tool({
  * ALL_TOOLS：All available tools
  */
 export const ALL_TOOLS = {
-  render_output: renderOutputTool,
-  weather: weatherTool,
+  // render_output: renderOutputTool,
+  // weather: weatherTool,
 
 };

@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import stream from "node:stream";
 
 type LLMModel = {
   id: number;
@@ -238,7 +239,10 @@ function ChatInner({
   // 底层 AI SDK useChat 实例（由 useAISDKRuntime 通过 extras 提供），
   // 恢复历史会话时直接注入消息，这是与适配器内部一致的受支持方式
   const chat = useAuiState(
-    (s) => s.thread.extras as { chat?: { setMessages: (m: any) => void } } | undefined,
+    (s) =>
+      s.thread.extras as
+        | { chat?: { setMessages: (m: any) => void } }
+        | undefined,
   )?.chat;
 
   // ============================================================
@@ -271,7 +275,8 @@ function ChatInner({
     }
 
     // 2. 恢复历史会话
-    console.log(`[restore] 开始恢复会话 ID: ${restoreId}`);
+    console.log(`[CONVERSATION] Recover conversation ID: ${restoreId}`);
+    log(`[CONVERSATION] Recover conversation ID: ${restoreId}`);
 
     (async () => {
       try {
@@ -281,30 +286,35 @@ function ChatInner({
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           data = await res.json();
         } catch (err) {
-          console.error("[restore] 获取会话数据失败:", err);
-          if (isLatest()) showToast("❌ 加载会话失败");
+          console.error("[restore] Failed to fetch conversation data:", err);
+          if (isLatest()) showToast("❌ Failed to load conversation data");
           return;
         }
 
         // 防御性检查：确保 messages 存在且是数组
         const rawMessages = data?.messages;
         if (!Array.isArray(rawMessages)) {
-          console.warn("[restore] 未找到有效的 messages 数组", data);
-          if (isLatest()) showToast("❌ 会话数据格式无效");
+          console.warn(
+            "[restore] Invalid messages array in conversation data",
+            data,
+          );
+          if (isLatest()) showToast("❌ Invalid conversation data format");
           return;
         }
 
         if (!chat || typeof chat.setMessages !== "function") {
-          console.error("[restore] 底层 chat 实例不可用");
-          if (isLatest()) showToast("❌ 恢复失败（runtime 未就绪）");
+          console.error("[restore] Bottom chat instance not available");
+          if (isLatest()) showToast("❌ Failed failed (runtime not ready)");
           return;
         }
 
-        // 转换为 AI SDK UIMessage 格式（{ id, role, parts, createdAt }）
+        // Convert raw messages to UIMessage format for AI SDK ({ id, role, parts, createdAt })
         const uiMessages = rawMessages
           .filter(
             (m: any) =>
-              m && typeof m === "object" && (m.role === "user" || m.role === "assistant"),
+              m &&
+              typeof m === "object" &&
+              (m.role === "user" || m.role === "assistant"),
           )
           .map((m: any, idx: number) => {
             let text = "";
@@ -313,7 +323,7 @@ function ChatInner({
               if (typeof m.content === "string") {
                 text = m.content;
               } else if (m.parts) {
-                // 处理 parts 可能是字符串的情况
+                // Process parts string if it's a JSON string
                 const parts =
                   typeof m.parts === "string" ? JSON.parse(m.parts) : m.parts;
 
@@ -330,8 +340,11 @@ function ChatInner({
                 text = String(m.text);
               }
             } catch (e) {
-              console.warn(`[restore] 解析第 ${idx} 条消息内容失败`, e);
-              text = "[解析失败]";
+              console.warn(
+                `[restore] Failed to parse message content for message ${idx}`,
+                e,
+              );
+              text = "[parse failed]";
             }
 
             return {
@@ -345,7 +358,7 @@ function ChatInner({
             };
           })
           .filter((m: any) => {
-            // 过滤完全空的文本消息，但保留 assistant 消息以维持对话结构
+            // Filter out empty text messages
             const hasText = m.parts?.some((p: any) => p.text?.trim());
             return hasText || m.role === "assistant";
           });
@@ -361,17 +374,18 @@ function ChatInner({
         chat.setMessages(uiMessages);
 
         setConversationId(restoreId as any);
-        showToast(`✅ 已恢复 ${uiMessages.length} 条消息`);
+        showToast(`✅ Restored ${uiMessages.length} messages`);
       } catch (err) {
-        console.error("[restore] 未知错误:", err);
-        if (isLatest()) showToast("❌ 恢复失败: " + (err as Error).message);
+        console.error("[restore] Unknown error:", err);
+        if (isLatest())
+          showToast("❌ Failed failed: " + (err as Error).message);
       } finally {
         done();
       }
     })();
   }, [restoreId, clearRestore, chat, aui]);
 
-  // 加载 system prompts
+  // Load system prompts
   useEffect(() => {
     fetch("/api/system_prompts")
       .then((r) => r.json())
@@ -385,9 +399,9 @@ function ChatInner({
         );
       })
       .catch((err) => log("Failed to fetch system prompts", err));
-  }, []); // 移除不必要的依赖，防止重复请求
+  }, []); // Remove unnecessary dependency
 
-  // 加载 LLM models
+  // Load LLM models
   useEffect(() => {
     fetch("/api/llm")
       .then((r) => r.json())
@@ -399,9 +413,9 @@ function ChatInner({
       .catch((err) => log("Failed to fetch models", err));
   }, []);
 
-  // 保存
+  // Save conversation
   const handleSave = async () => {
-    // 防御性检查：确保 messages 存在
+    // Make sure messages exist
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       showToast("❌ No messages to save");
       return;
@@ -440,10 +454,10 @@ function ChatInner({
   };
 
   // 新会话
-  const handleNewChat = () => {
-    requestRestore(0); // 触发外层 restoreId = 0
-    setConversationId(null);
-  };
+  // const handleNewChat = () => {
+  //   requestRestore(0); // Trigger restore with restoreId = 0
+  //   setConversationId(null);
+  // };
 
   return (
     <div className="h-full w-full flex flex-col">
@@ -451,7 +465,7 @@ function ChatInner({
         <Thread
           composerToolbar={
             <div className="flex items-center gap-2 flex-wrap">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleNewChat}
@@ -460,7 +474,7 @@ function ChatInner({
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 NEW
-              </Button>
+              </Button> */}
 
               <Button
                 variant="ghost"
@@ -644,6 +658,9 @@ function ChatInner({
   );
 }
 
+// ============================================================
+// Before restore conversation ok
+// ============================================================
 // /** biome-ignore-all assist/source/organizeImports: <explanation> */
 // /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 // "use client";

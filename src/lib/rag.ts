@@ -25,7 +25,9 @@ export type RAGChunk = {
 // ============================================================
 // 列表查询（你原有的，保持不动）
 // ============================================================
-export async function listRAGSources(department?: string): Promise<RAGSource[]> {
+export async function listRAGSources(
+  department?: string,
+): Promise<RAGSource[]> {
   const params: string[] = [];
   let deptFilter = "";
 
@@ -78,12 +80,12 @@ export async function listRAGSources(department?: string): Promise<RAGSource[]> 
 export async function searchRAG(
   question: string,
   options: {
-    department?: string;    // 部门代码，如 'HR'
-    topK?: number;          // 返回几条，默认 5
+    department?: string; // 部门代码，如 'HR'
+    topK?: number; // 返回几条，默认 5
     minSimilarity?: number; // 相似度阈值，默认 0.5
   } = {},
 ): Promise<RAGChunk[]> {
-  const { department, topK = 5, minSimilarity = 0.5 } = options;
+  const { department, topK = 5, minSimilarity = 0.3 } = options;
 
   // ① 问题向量化
   const queryEmbedding = await embedOne(question);
@@ -122,7 +124,6 @@ export async function searchRAG(
       similarity: r.similarity,
     }));
 }
-
 
 // // lib/rag.ts
 // import { pool } from "./db";

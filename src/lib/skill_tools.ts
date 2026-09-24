@@ -1,5 +1,5 @@
 // src/lib/skill-tools.ts
-import { tool } from "ai";
+import { jsonSchema, tool } from "ai";
 import { z } from "zod";
 
 export type SkillRow = {
@@ -94,30 +94,61 @@ async function callSkill(skill: SkillRow, args: unknown): Promise<unknown> {
 
     // ---------- mcp：走 MCP server ----------
     case "mcp": {
-      // handler_ref 指向 mcp_server.name，endpoint 指向 MCP 的 URL
-      // 这里简单转发，更完整的实现可复用 mcp-tools.ts 的 callMcpServer
-      if (!skill.endpoint) {
-        throw new Error(`Skill ${skill.name} (mcp) 缺少 endpoint`);
-      }
-      const auth = resolveAuth(skill);
-      const res = await fetch(skill.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...auth,
-        },
-        body: JSON.stringify({
-          tool: skill.handler_ref ?? skill.name,
-          arguments: args,
-        }),
-      });
-      if (!res.ok) {
-        throw new Error(
-          `MCP ${skill.handler_ref ?? skill.name} HTTP ${res.status}`,
-        );
-      }
-      return res.json();
+  if (!skill.endpoint) {
+    throw new Error(`Skill ${skill.name} (mcp) 缺少 endpoint`);
+  }
+  const auth = resolveAuth(skill);
+  const toolName = skill.handler_ref ?? skill.name;
+
+  const res = await fetch(skill.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
+      ...auth,
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: toolName, arguments: args },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`MCP ${toolName} HTTP ${res.status}: ${await res.text()}`);
+  }
+
+  const text = await res.text();
+  const dataLine = text.split("\n").find((line) => line.startsWith("data: "));
+  if (!dataLine) {
+    throw new Error(`MCP ${toolName} 响应格式错误: ${text.slice(0, 200)}`);
+  }
+
+  const json = JSON.parse(dataLine.slice(6));
+  if (json.error) {
+    throw new Error(`MCP ${toolName} error: ${json.error.message}`);
+  }
+
+  // 👇 提取 content 里的纯文本
+  const content = json.result?.content;
+  if (Array.isArray(content)) {
+    const textParts = content
+      .filter((c: any) => c.type === "text")
+      .map((c: any) => c.text)
+      .join("\n");
+
+    // content[].text 本身可能是 JSON 字符串（如 {"results":[...]}），
+    // 尝试解析，解析成功就返回结构化对象，失败就返回文本
+    try {
+      return JSON.parse(textParts);
+    } catch {
+      return textParts;
     }
+  }
+
+  return json.result;
+}
 
     default:
       throw new Error(`Unsupported handler_type: ${skill.handler_type}`);
@@ -131,24 +162,23 @@ export function buildSkillTools(skills: SkillRow[]): Record<string, any> {
   for (const skill of skills) {
     // 🚨 加 skill__ 前缀，避免和内置 / MCP tool 重名
     const toolName = `skill__${skill.name}`;
-
-    result[toolName] = tool({
-      description: `[SKILL:${skill.display_name ?? skill.name}] ${skill.description}`,
-      inputSchema: skill.input_schema
-        ? (skill.input_schema as any)
-        : z.object({}).passthrough(),
-      execute: async (args: any) => {
-        console.log(`[SKILL] 调用 ${skill.name}`, args);
-        try {
-          const out = await callSkill(skill, args);
-          console.log(`[SKILL] ${skill.name} 返回:`, out);
-          return out;
-        } catch (err) {
-          console.error(`[SKILL] ${skill.name} 失败:`, err);
-          throw err;
-        }
-      },
-    });
+  result[toolName] = tool({
+  description: `[SKILL:${skill.display_name ?? skill.name}] ${skill.description}`,
+  inputSchema: skill.input_schema
+    ? jsonSchema(skill.input_schema as any)
+    : z.object({}).passthrough(),
+  execute: async (args: any) => {
+    console.log(`[SKILL] 调用 ${skill.name}`, args);
+    try {
+      const out = await callSkill(skill, args);
+      console.log(`[SKILL] ${skill.name} 返回:`, out);
+      return out;
+    } catch (err) {
+      console.error(`[SKILL] ${skill.name} 失败:`, err);
+      throw err;
+    }
+  },
+});
   }
 
   return result;

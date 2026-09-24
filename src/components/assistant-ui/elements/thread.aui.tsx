@@ -626,13 +626,24 @@ const AssistantMessage: FC = () => {
                 );
               case "indicator":
                 return (
-                  <div>
+                  <div className="flex items-center gap-2 px-2 py-1">
+                    {/* 彩色光点 */}
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" />
+                    </span>
+
+                    {/* 渐变文字 */}
                     <span
-                      data-slot="aui_assistant-message-indicator"
-                      className="animate-pulse font-sans"
-                      aria-label="Assistant is working"
+                      className="
+          bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500
+          bg-[length:200%_auto]
+          bg-clip-text text-transparent
+          text-sm font-medium
+          animate-gradient
+        "
                     >
-                      {"●"}
+                      AI Thinking...
                     </span>
                   </div>
                 );

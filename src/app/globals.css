@@ -212,6 +212,20 @@ pre[class*="language-"]>code>span {
   background: transparent !important;
 }
 
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-gradient {
+  animation: gradient-flow 3s linear infinite;
+}
+
 /* ============ 自定义变体 ============ */
 
 @custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));

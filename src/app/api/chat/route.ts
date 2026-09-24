@@ -18,6 +18,8 @@ import {
 } from "ai";
 import { searchRAG } from "@/lib/rag";
 import { getSessionDepartment } from "@/lib/auth";
+import { enqueueChatLog, enqueueChatSession } from "@/lib/chat_logger";
+
 export async function POST(req: Request) {
   const session = await getSession();
   const username = session?.username ?? "anonymous";
@@ -35,7 +37,8 @@ export async function POST(req: Request) {
     skills = [],
     inputTokens = 0,
     llm_enable_rag = false,
-    
+    llm_enable_search = false,
+    sessionId,
   }: {
     messages: UIMessage[];
     deepThink: boolean;
@@ -47,71 +50,129 @@ export async function POST(req: Request) {
     skills?: any[];
     inputTokens?: number;
     llm_enable_rag?: boolean;
+    llm_enable_search?: boolean;
+    sessionId?: string;
   } = body;
-  // const enableRAG = body.llm_enable_rag //?? false;
+
+  // 👇 统一转成 boolean
+  const useDeepThink = deepThink === true;
+
+  // 👇 模型配置兜底
+  let finalModel = llm_model;
+  let finalApiKey = llm_apiKey;
+  let finalBaseUrl = llm_baseUrl;
+
+  if (!finalBaseUrl || !finalModel) {
+    try {
+      const { rows } = await pool.query(
+        `SELECT llm_apikey, llm_baseurl, llm_model FROM llm
+         WHERE is_default = true LIMIT 1`,
+      );
+      if (rows.length > 0) {
+        finalApiKey = finalApiKey || rows[0].llm_apikey;
+        finalBaseUrl = finalBaseUrl || rows[0].llm_baseurl;
+        finalModel = finalModel || rows[0].llm_model;
+      }
+    } catch (err) {
+      console.error("[CHAT] failed to fetch default model:", err);
+    }
+  }
+
+  if (!finalBaseUrl) {
+    return new Response(JSON.stringify({ error: "No LLM model configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   console.log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
-  // log("[CHAT] mcpServers 数量:", mcpServers?.length ?? 0);
 
-  // ==================== Combine tools ====================
-  const mcpTools = buildMcpTools(mcpServers);
-  const skillTools = buildSkillTools(skills);
+  // ==================== Chat bubble 日志 ====================
+  if (sessionId) {
+    enqueueChatSession({ sessionId, username, llmModel: finalModel });
+  }
 
-  const allTools = { ...ALL_TOOLS, ...mcpTools, ...skillTools };
-
-  console.log("[TOOLS] Available:", Object.keys(allTools));
-  const logs: { level: string; text: string; color: string }[] = [];
-  const pendingLogs = (level: string, text: string, color: string) => {logs.push({level, text, color})}
-
- // ==================== RAG 检索 ====================
-let ragContext = "";
-let ragSources: any[] = [];
- if(llm_enable_rag){
-try {
-  // 取最后一条用户消息
-  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
-  const question =
+  // 👇 提取用户消息，立即入队
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === "user");
+  const userContent =
     lastUserMessage?.parts
       ?.filter((p: any) => p.type === "text")
       .map((p: any) => p.text)
       .join("\n") ?? "";
 
-  if (question) {
-    // 取当前用户部门（实现部门隔离）
-    const department = await getSessionDepartment();
-
-    ragSources = await searchRAG(question, {
-      department,
-      topK: 5,
-      minSimilarity: 0.4,
+  if (sessionId && userContent) {
+    enqueueChatLog({
+      sessionId,
+      username,
+      role: "user",
+      content: userContent,
+      llmModel: finalModel,
+      parts: lastUserMessage?.parts,
     });
-
-    if (ragSources.length > 0) {
-          pendingLogs("INFO", `[RAG] Indexed ${ragSources.length} pcs of segment`, "blue");
-        ragSources.forEach((s, i) => {
-        pendingLogs("LOG", `[RAG ${i + 1}] 《${s.title}》\n Similarity: ${s.similarity.toFixed(3)}`, "purple");
-  });
-      ragContext = ragSources
-        .map((c, i) => `[${i + 1}] From ${c.title}\n${c.content}`)
-        .join("\n\n");
-    }
-
-    console.log("[RAG] question:", question);
-    console.log("[RAG] department:", department);
-    console.log("[RAG] sources:", ragSources.length);
   }
-} catch (err) {
-  console.error("[RAG] search failed:", err);
-  // indexed failed, continue to normal flow
-  pendingLogs("ERROR", `[RAG ERROR] Search failed: ${err}`, "red");
-}
- }
 
-// ==================== Build system prompt ====================
+  // ==================== Combine tools ====================
+  const mcpTools = buildMcpTools(mcpServers);
+  const skillTools = buildSkillTools(skills);
+  const allTools = { ...ALL_TOOLS, ...mcpTools, ...skillTools };
+
+  console.log("[TOOLS] Available:", Object.keys(allTools));
+
+  const logs: { level: string; text: string; color: string }[] = [];
+  const pendingLogs = (level: string, text: string, color: string) => {
+    logs.push({ level, text, color });
+  };
+
+  // ==================== RAG 检索 ====================
+  let ragContext = "";
+  let ragSources: any[] = [];
+
+  if (llm_enable_rag) {
+    try {
+      if (userContent) {
+        const department = await getSessionDepartment();
+
+        ragSources = await searchRAG(userContent, {
+          department,
+          topK: 5,
+          minSimilarity: 0.3,
+        });
+
+        if (ragSources.length > 0) {
+          pendingLogs(
+            "INFO",
+            `[RAG] Indexed ${ragSources.length} pcs of segment`,
+            "blue",
+          );
+          ragSources.forEach((s, i) => {
+            pendingLogs(
+              "LOG",
+              `[RAG ${i + 1}] 《${s.title}》\n Similarity: ${s.similarity.toFixed(3)}`,
+              "purple",
+            );
+          });
+          ragContext = ragSources
+            .map((c, i) => `[${i + 1}] From ${c.title}\n${c.content}`)
+            .join("\n\n");
+        }
+
+        console.log("[RAG] question:", userContent);
+        console.log("[RAG] department:", department);
+        console.log("[RAG] sources:", ragSources.length);
+      }
+    } catch (err) {
+      console.error("[RAG] search failed:", err);
+      pendingLogs("ERROR", `[RAG ERROR] Search failed: ${err}`, "red");
+    }
+  }
+
+  // ==================== Build system prompt ====================
   const basePrompt =
     selectedSystemPrompt ||
     "You are a smart assistant, you can answer any question.";
- 
+
   const systemPrompt = ragContext
     ? `${basePrompt}
 
@@ -122,26 +183,60 @@ try {
 
 === 参考资料 ===
 ${ragContext}
-=== 资料结束 ===
-
-注意：当前没有检索到相关企业文档。如果用户询问公司制度、政策、流程相关的问题，请提示用户开启知识库或联系管理员。`
+=== 资料结束 ===`
     : basePrompt;
-  
 
-  const isDeepSeek = llm_baseUrl?.includes("deepseek");
+  const isDeepSeek = finalBaseUrl?.includes("deepseek");
 
-  // ==================== onFinish：token usage ====================
-  const onFinishHandler = async ({ usage }: any) => {
+  // ==================== onFinish：token + 日志 ====================
+  const onFinishHandler = async ({ text, usage, response }: any) => {
     console.log("[TOKEN] usage:", {
       prompt: usage?.inputTokens,
       completion: usage?.outputTokens,
       total: usage?.totalTokens,
     });
-    log("[TOKEN] usage:", {
-      prompt: usage?.inputTokens,
-      completion: usage?.outputTokens,
-      total: usage?.totalTokens,
-    });
+
+    // 👇 AI 回复入队
+    if (sessionId) {
+      const assistantParts = response?.messages
+        ?.filter((m: any) => m.role === "assistant")
+        ?.at(-1)?.parts ?? [{ type: "text", text: text ?? "" }];
+
+      console.log("[chat-logger] onFinish enqueue assistant:", {
+        sessionId,
+        ragUsed: llm_enable_rag && ragSources.length > 0,
+        ragSourcesCount: ragSources.length,
+      });
+
+      enqueueChatLog({
+        sessionId,
+        username,
+        role: "assistant",
+        content: text ?? "",
+        parts: assistantParts,
+        llmModel: finalModel,
+        ragUsed: llm_enable_rag && ragSources.length > 0,
+        ragSources:
+          ragSources.length > 0
+            ? ragSources.map((s) => ({
+                title: s.title,
+                similarity: s.similarity,
+                docType: s.docType,
+              }))
+            : [],
+        metadata: {
+          usage: {
+            input: usage?.inputTokens ?? null,
+            output: usage?.outputTokens ?? null,
+            total: usage?.totalTokens ?? null,
+          },
+          deepThink: useDeepThink,
+          searchEnabled: llm_enable_search,
+        },
+      });
+    }
+
+    // 👇 token 记录
     try {
       await pool.query(
         `INSERT INTO public.token
@@ -149,7 +244,7 @@ ${ragContext}
          VALUES ($1, $2, $3, $4, $5)`,
         [
           username,
-          llm_model || "unknown",
+          finalModel || "unknown",
           usage?.inputTokens ?? 0,
           usage?.outputTokens ?? 0,
           usage?.totalTokens ?? 0,
@@ -160,19 +255,22 @@ ${ragContext}
     }
   };
 
-  // ====================  streamText  ====================
+  // ==================== streamText ====================
   let result: any;
 
   if (isDeepSeek) {
     const provider = createDeepSeek({
-      apiKey: llm_apiKey || process.env.DEEPSEEK_API_KEY,
-      baseURL: llm_baseUrl || process.env.DEEPSEEK_BASEURL,
+      apiKey: finalApiKey || process.env.DEEPSEEK_API_KEY,
+      baseURL: finalBaseUrl || process.env.DEEPSEEK_BASEURL,
     });
 
     result = streamText({
-      model: provider(llm_model || "deepseek-v4-flash"),
+      model: provider(finalModel || "deepseek-v4-flash"),
       providerOptions: {
-        deepseek: { thinking: { type: deepThink ? "enabled" : "disabled" } },
+        deepseek: {
+          thinking: { type: useDeepThink ? "enabled" : "disabled" },
+          enable_search: llm_enable_search,
+        },
       },
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
@@ -182,14 +280,19 @@ ${ragContext}
   } else {
     const provider = createOpenAICompatible({
       name: "custom",
-      apiKey: llm_apiKey || process.env.ALI_API_KEY!,
-      baseURL: llm_baseUrl || process.env.ALI_OpenAI!,
+      apiKey: finalApiKey || process.env.ALI_API_KEY!,
+      baseURL: finalBaseUrl,
     });
 
     result = streamText({
-      model: provider(llm_model || "qwen3.7-flash"),
+      model: provider(finalModel || "qwen-plus"),
       providerOptions: {
-        custom: { enable_thinking: deepThink },
+        custom: {
+          enable_thinking: useDeepThink,
+          extra_body: {
+            enable_search: llm_enable_search,
+          },
+        },
       },
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
@@ -198,7 +301,7 @@ ${ragContext}
     });
   }
 
-  // ====================  UI message stream，combine result and log ====================
+  // ==================== UI stream ====================
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       const sendLog = (level: string, text: string, color: string) => {
@@ -213,21 +316,27 @@ ${ragContext}
         });
       };
 
-      // sendLog("INFO", `[Requesting]: model=${llm_model}, tools=${Object.keys(allTools).length}`);
-      sendLog("LOG", `[TOOLS]: ${Object.keys(allTools).join(", ")} `, "text-purple-400");
-      sendLog("INFO", `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`, "text-purple-400");
-      sendLog("INFO", `[SKILLS] : ${skills.length??0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`, "blue");
+      sendLog(
+        "INFO",
+        `[TOOLS]: ${Object.keys(allTools).join(", ")} `,
+        "text-purple-400",
+      );
+      sendLog(
+        "INFO",
+        `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`,
+        "text-purple-400",
+      );
+      sendLog(
+        "INFO",
+        `[SKILLS] : ${skills.length ?? 0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`,
+        "blue",
+      );
       sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`, "purple");
       logs.forEach((l) => sendLog(`"RAG" [${l.level}]`, l.text, "orange"));
-      console.log("[CHAT] skills 数量:", skills?.length ?? 0);            // 🚨 加这行
-      console.log("[CHAT] skills 详情:", JSON.stringify(skills, null, 2)); // 🚨 加这行
-      // sendLog("LOG", `[SKILLS] count=${skills?.length ?? 0}, names=${skills?.map((s) => s.name).join(", ") ?? ""}`);
 
-      // 🚨 把 result 的流合并进 UI stream
       writer.merge(toUIMessageStream({ stream: result.stream }));
     },
   });
 
-  // ==================== Return ====================
   return createUIMessageStreamResponse({ stream });
 }
