@@ -62,3 +62,7 @@ MCP Server option
 2026-09-24 add remote logger to log APP running conosle logs and append to database. add AI sevice robot to handle customer support. add mangement panel to CRUD skills, MCP servers, system_prompts, LLMs,.
 
 ![alt text](image-7.png)
+
+CRUD UI of skills, MCP servers, system_prompts, LLMs, etc.
+
+![alt text](image-8.png)
