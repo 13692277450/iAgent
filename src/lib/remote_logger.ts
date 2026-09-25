@@ -1,7 +1,7 @@
 // lib/remote_logger.ts
 const LOG_API = process.env.LOG_API_URL || "http://localhost:3000/api/logs";
 const LOG_TOKEN = process.env.LOG_API_TOKEN;
-const FLUSH_INTERVAL = 2000;
+const FLUSH_INTERVAL = 20000;
 const MAX_BUFFER = 50;
 
 // 👇 只记录这些级别（log/info 太多，忽略）
@@ -57,11 +57,17 @@ function enqueue(level: LogLevel, args: unknown[]) {
 }
 async function flush() {
   if (buffer.length === 0) {
-    originalConsole.log("[remote-logger] flush: buffer empty, skip");
+    originalConsole.log(
+      "[remote-logger] flush: buffer empty, skip -- " +
+        new Date().toLocaleString("zh-CN"),
+    );
     return;
   }
   if (isSending) {
-    originalConsole.warn("[remote-logger] flush: already sending, skip");
+    originalConsole.warn(
+      "[remote-logger] flush: already sending, skip -- " +
+        new Date().toLocaleString("zh-CN"),
+    );
     return;
   }
   isSending = true;
@@ -150,6 +156,7 @@ export function installRemoteLogger() {
   originalConsole.log("=".repeat(50));
 
   flushTimer = setInterval(() => {
+    if (buffer.length === 0) return;
     flush().catch(() => {});
   }, FLUSH_INTERVAL);
 

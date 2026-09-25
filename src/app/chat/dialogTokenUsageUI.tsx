@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { TokenCalendarContent } from "./pageTokenUsage";
+import { useI18n } from "@/components/i18n-provider";
 
 export function TokenCalendarDialog({
   open,
@@ -14,12 +15,15 @@ export function TokenCalendarDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[700px] bg-gray-300 border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.25)] backdrop-blur-md">
+      <DialogContent className="max-w-[700px] bg-popover text-popover-foreground border-border shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg">TOKEN USAGE</DialogTitle>
-          <DialogDescription className="text-md font-bold text-slate-500">
+          <DialogTitle className="text-lg text-cyan-600 dark:text-cyan-400">
+            {t("token.usage")}
+          </DialogTitle>
+          <DialogDescription className="font-bold text-muted-foreground">
             {/* Token usage */}
           </DialogDescription>
         </DialogHeader>

@@ -2,11 +2,13 @@
 "use client";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import { useState, useEffect } from "react";
+import { useI18n } from "@/components/i18n-provider";
 
 export function TokenCalendarContent() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [tokenMap, setTokenMap] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const { t } = useI18n();
 
   useEffect(() => {
     let cancelled = false;
@@ -59,27 +61,27 @@ export function TokenCalendarContent() {
   return (
     <div className="space-y-5">
       {/* 汇总数字 */}
-      <div className="grid grid-cols-2 gap-4 ">
-        <div className="rounded-lg border border-cyan-400/40 bg-slate-900 px-4 py-3">
-          <div className="text-xs font-mono uppercase tracking-wider text-cyan-400">
-            THIS MONTH
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-lg border border-primary/40 bg-card px-4 py-3">
+          <div className="font-mono text-xs uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+            {t("token.thisMonth")}
           </div>
-          <div className="text-2xl font-bold text-cyan-200 tabular-nums mt-1">
-            {loading ? "Loading..." : monthTotal.toLocaleString()}
+          <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+            {loading ? t("token.loading") : monthTotal.toLocaleString()}
           </div>
         </div>
-        <div className="rounded-lg border border-cyan-400/40 bg-slate-900 px-4 py-3">
-          <div className="text-xs font-mono uppercase tracking-wider text-cyan-400">
-            THIS YEAR
+        <div className="rounded-lg border border-primary/40 bg-card px-4 py-3">
+          <div className="font-mono text-xs uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+            {t("token.thisYear")}
           </div>
-          <div className="text-2xl font-bold text-cyan-200 tabular-nums mt-1">
-            {loading ? "Loading" : yearTotal.toLocaleString()}
+          <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+            {loading ? t("token.loading") : yearTotal.toLocaleString()}
           </div>
         </div>
       </div>
 
       {/* 日历容器 */}
-      <div className="p-4 rounded-lg border border-cyan-400/30 bg-purple-100/50 overflow-hidden  text-cyan-400">
+      <div className="overflow-hidden rounded-lg border border-border bg-card/60 p-4 text-cyan-600 dark:text-cyan-400">
         <Calendar
           mode="single"
           selected={date}
@@ -89,19 +91,21 @@ export function TokenCalendarContent() {
           captionLayout="dropdown"
           startMonth={new Date(2020, 0)} // 2020年1月
           endMonth={new Date(2030, 11)} // 2030年12月
-          className="w-full rounded-lg border text-base"
+          className="w-full rounded-lg border border-border bg-card text-foreground"
           components={{
             DayButton: (props) => {
               const usage = getTokenForDate(props.day.date);
               return (
                 <CalendarDayButton
                   {...props}
-                  className="hover:bg-orange-200/60 data-[selected=true]:bg-cyan-500/30 data-[selected=true]:text-cyan-400/60 data-[selected=true]:border-cyan-400/50 rounded-md transition-colors"
+                  className="rounded-md transition-colors hover:bg-primary/15 data-[selected=true]:bg-primary/25 data-[selected=true]:text-cyan-700 dark:data-[selected=true]:text-cyan-300 data-[selected=true]:border-primary/50"
                 >
                   <span>{props.children}</span>
                   {usage !== undefined && (
-                    <span className="text-[14px] leading-none text-orange-600 font-semibold">
-                      {usage >= 1000 ? `${(usage / 1000).toFixed(1)}k` : usage}
+                    <span className="text-[14px] font-semibold leading-none text-orange-600 dark:text-orange-400">
+                      {usage >= 1000
+                        ? `Total: ${(usage / 1000).toFixed(1)}k`
+                        : `Total: ${usage}`}
                     </span>
                   )}
                 </CalendarDayButton>

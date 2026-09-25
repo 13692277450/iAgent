@@ -1,7 +1,6 @@
 /** biome-ignore-all assist/source/organizeImports: <explanation> */
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 "use client";
-
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useMcp } from "@/components/mcp_provider";
 import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
@@ -11,6 +10,8 @@ import {
   useAuiState,
   useAui,
 } from "@assistant-ui/react";
+import { WebSpeechDictationAdapter } from "@assistant-ui/react";
+
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { DefaultChatTransport } from "ai";
@@ -36,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n-provider";
 import stream from "node:stream";
 
 type LLMModel = {
@@ -136,6 +138,15 @@ export default function ChatPage() {
 
   const runtime = useChatRuntime({
     transport,
+    adapters: {
+      dictation: WebSpeechDictationAdapter.isSupported()
+        ? new WebSpeechDictationAdapter({
+            language: "zh-CN", // 默认跟随浏览器语言，建议显式设为中文
+            continuous: true, // 停顿后继续录音（默认 true）
+            interimResults: true, // 实时返回中间结果，边说话边出字
+          })
+        : undefined,
+    },
     onData: (dataPart) => {
       if (dataPart.type === "data-log") {
         const data = dataPart.data as {
@@ -219,6 +230,7 @@ function ChatInner({
 }: ChatInnerProps) {
   const { triggerRefresh, restoreId, clearRestore, requestRestore } =
     useConversation();
+  const { t } = useI18n();
   const [saving, setSaving] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
 
@@ -287,7 +299,7 @@ function ChatInner({
           data = await res.json();
         } catch (err) {
           console.error("[restore] Failed to fetch conversation data:", err);
-          if (isLatest()) showToast("❌ Failed to load conversation data");
+          if (isLatest()) showToast("❌ " + t("chat.restoreFailed"));
           return;
         }
 
@@ -298,13 +310,13 @@ function ChatInner({
             "[restore] Invalid messages array in conversation data",
             data,
           );
-          if (isLatest()) showToast("❌ Invalid conversation data format");
+          if (isLatest()) showToast("❌ " + t("chat.restoreFailed"));
           return;
         }
 
         if (!chat || typeof chat.setMessages !== "function") {
           console.error("[restore] Bottom chat instance not available");
-          if (isLatest()) showToast("❌ Failed failed (runtime not ready)");
+          if (isLatest()) showToast("❌ " + t("chat.restoreFailed"));
           return;
         }
 
@@ -348,7 +360,11 @@ function ChatInner({
             }
 
             return {
-              id: String(m.id || `restored-${idx}-${Date.now()}`),
+              id: String(
+                m.id ||
+                  `restored-${idx}), 
+                // -${Date.now()}`,
+              ),
               role: m.role,
               createdAt:
                 m.created_at || m.createdAt
@@ -378,7 +394,9 @@ function ChatInner({
       } catch (err) {
         console.error("[restore] Unknown error:", err);
         if (isLatest())
-          showToast("❌ Failed failed: " + (err as Error).message);
+          showToast(
+            "❌ " + t("chat.restoreFailed") + ": " + (err as Error).message,
+          );
       } finally {
         done();
       }
@@ -417,7 +435,7 @@ function ChatInner({
   const handleSave = async () => {
     // Make sure messages exist
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      showToast("❌ No messages to save");
+      showToast("❌ " + t("chat.noMessages"));
       return;
     }
 
@@ -441,12 +459,12 @@ function ChatInner({
       if (data.conversationId) {
         setConversationId(data.conversationId);
         triggerRefresh();
-        showToast("✅ Conversation saved");
+        showToast("✅ " + t("chat.conversationSaved"));
       } else {
-        showToast("❌ Save failed");
+        showToast("❌ " + t("chat.saveFailed"));
       }
     } catch (err) {
-      showToast("❌ Save failed");
+      showToast("❌ " + t("chat.saveFailed"));
       log("Save failed", err);
     } finally {
       setSaving(false);
@@ -476,6 +494,7 @@ function ChatInner({
                 NEW
               </Button> */}
 
+              {/* DeepThink */}
               <Button
                 variant="ghost"
                 type="button"
@@ -486,30 +505,30 @@ function ChatInner({
                 }}
                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                   deepThink
-                    ? "bg-cyan-500/30 text-cyan-400 border-cyan-600/80"
-                    : "bg-slate-900/60 text-slate-100 border-cyan-400/20"
+                    ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 hover:bg-cyan-500/25"
+                    : "bg-card text-muted-foreground border-border shadow-sm hover:bg-muted hover:text-foreground"
                 }`}
               >
                 <BrainCircuit className="w-4 h-4 mr-1.5" />
-                {deepThink ? "DeepThink On" : "DeepThink Off"}
+                {deepThink ? t("chat.deepThinkOn") : t("chat.deepThinkOff")}
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
-                  <BookAIcon className="w-4 h-4 mr-1.5" />
-                  {selectedSystemPrompt?.system_prompt_name ?? "Prompt"}
+                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
+                  <BookAIcon className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
+                  {selectedSystemPrompt?.system_prompt_name ?? t("chat.prompt")}
                   <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100"
+                  className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
                 >
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-cyan-400">
-                      SYSTEM PROMPT
+                    <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
+                      {t("chat.systemPrompt")}
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator className="bg-cyan-400/20" />
+                  <DropdownMenuSeparator />
                   {systemPrompts.map((sp) => (
                     <DropdownMenuItem
                       key={sp.id}
@@ -521,7 +540,7 @@ function ChatInner({
                       }}
                       className={`cursor-pointer text-xs ${
                         selectedSystemPrompt?.id === sp.id
-                          ? "bg-cyan-200/10 text-cyan-500"
+                          ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
                           : ""
                       }`}
                     >
@@ -532,21 +551,21 @@ function ChatInner({
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs bg-slate-900/60 border border-cyan-400/30 text-cyan-300">
-                  <Cpu className="w-4 h-4 mr-1.5" />
-                  {selectedModel?.llm_model ?? "Model"}
+                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
+                  <Cpu className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
+                  {selectedModel?.llm_model ?? t("chat.model")}
                   <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="w-56 bg-slate-900 border border-cyan-400/30 text-slate-100"
+                  className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
                 >
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-cyan-400">
-                      SELECT MODEL
+                    <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
+                      {t("chat.selectModel")}
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator className="bg-cyan-400/20" />
+                  <DropdownMenuSeparator />
                   {models.map((m) => (
                     <DropdownMenuItem
                       key={m.id}
@@ -556,7 +575,7 @@ function ChatInner({
                       }}
                       className={`cursor-pointer text-xs ${
                         selectedModel?.id === m.id
-                          ? "bg-cyan-500/10 text-cyan-300"
+                          ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
                           : ""
                       }`}
                     >
@@ -571,13 +590,13 @@ function ChatInner({
                 size="sm"
                 onClick={handleSave}
                 disabled={saving || !messages || messages.length === 0}
-                className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 disabled:opacity-40"
+                className="h-8 text-xs bg-card text-foreground border border-border shadow-sm hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400 disabled:opacity-40"
               >
-                <Save className="w-3.5 h-3.5 mr-1" />
-                {saving ? "Saving..." : "SAVE"}
+                <Save className="w-3.5 h-3.5 mr-1 text-cyan-600 dark:text-cyan-400" />
+                {saving ? t("common.saving") : t("chat.save")}
               </Button>
 
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
@@ -585,15 +604,15 @@ function ChatInner({
                   setEnableMic(next);
                   log(`[MIC] Mic Set: ${next}`);
                 }}
-                title={enableMic ? "Microphone On" : "Microphone Off"}
+                title={enableMic ? t("chat.micOn") : t("chat.micOff")}
                 className={`h-8 w-8 transition-colors ${
                   enableMic
-                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-orange-400 bg-cyan-500/20 border-orange-400/60"
+                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
                 }`}
               >
                 <Mic className="w-4 h-4" />
-              </Button>
+              </Button> */}
 
               <Button
                 variant="ghost"
@@ -603,11 +622,13 @@ function ChatInner({
                   setEnableSearch(next);
                   log(`[SEARCH] Search Internet Set: ${next}`);
                 }}
-                title={enableSearch ? "Internet On" : "Internet Off"}
+                title={
+                  enableSearch ? t("chat.internetOn") : t("chat.internetOff")
+                }
                 className={`h-8 w-8 transition-colors ${
                   enableSearch
-                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-red-400 bg-cyan-500/20 border-red-400/60"
+                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
                 }`}
               >
                 <Globe className="w-4 h-4" />
@@ -627,11 +648,11 @@ function ChatInner({
                     next ? "info" : "log",
                   );
                 }}
-                title={enableRAG ? "RAG On" : "RAG Off"}
+                title={enableRAG ? t("chat.ragOn") : t("chat.ragOff")}
                 className={`h-8 w-8 transition-colors ${
                   enableRAG
-                    ? "text-cyan-600 hover:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-red-400 bg-cyan-500/20 border-red-400/60"
+                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
                 }`}
               >
                 <BookAIcon className="w-4 h-4" />

@@ -23,6 +23,7 @@ import {
   Star,
 } from "lucide-react";
 import { log } from "@/lib/logger";
+import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 
 // ==========================================
@@ -53,7 +54,7 @@ const ENHANCED_STYLES = `
 
   /* --- 表单玻璃卡片 --- */
   .skill-glass-form .glass-field-wrapper {
-    @apply p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] transition-all duration-300 relative overflow-hidden;
+    @apply p-4 rounded-xl bg-muted/40 border border-border transition-all duration-300 relative overflow-hidden;
   }
   .skill-glass-form .glass-field-wrapper::after {
     content: '';
@@ -63,7 +64,7 @@ const ENHANCED_STYLES = `
     transition: opacity 0.3s;
   }
   .skill-glass-form .glass-field-wrapper:hover {
-    @apply border-white/[0.12] bg-white/[0.05];
+    @apply border-border bg-muted/60;
   }
   .skill-glass-form .glass-field-wrapper:hover::after {
     opacity: 1;
@@ -73,7 +74,7 @@ const ENHANCED_STYLES = `
   .skill-glass-form input,
   .skill-glass-form textarea,
   .skill-glass-form select {
-    @apply !bg-black/30 !border-white/10 !text-slate-200 !placeholder:text-slate-600 !rounded-lg !transition-all !duration-300;
+    @apply !bg-card !border-border !text-foreground !placeholder:text-muted-foreground !rounded-lg !transition-all !duration-300;
   }
   .skill-glass-form input:focus,
   .skill-glass-form textarea:focus,
@@ -81,7 +82,7 @@ const ENHANCED_STYLES = `
     @apply !border-cyan-500/50 !ring-1 !ring-cyan-500/20 !outline-none !shadow-[0_0_12px_rgba(6,182,212,0.15)];
   }
   .skill-glass-form label {
-    @apply !text-xs !font-semibold !uppercase !tracking-widest !text-slate-400 !mb-2 !flex !items-center !gap-2;
+    @apply !text-xs !font-semibold !uppercase !tracking-widest !text-muted-foreground !mb-2 !flex !items-center !gap-2;
   }
 
   /* --- Save 按钮脉冲光晕 --- */
@@ -188,6 +189,7 @@ export function ManageSkillsDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const [list, setList] = useState<Skill[]>([]);
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Skill | null>(null);
   const [saving, setSaving] = useState(false);
@@ -237,7 +239,7 @@ export function ManageSkillsDialog({
   };
 
   const remove = async (id: number) => {
-    if (!confirm("确定要删除此技能吗？此操作不可撤销。")) return;
+    if (!confirm(t("admin.skillsDeleteConfirm"))) return;
     await fetch(`/api/admin/skills/${id}`, { method: "DELETE" });
     await load();
   };
@@ -249,15 +251,15 @@ export function ManageSkillsDialog({
       <AdminDialogShell
         open={open}
         onOpenChange={onOpenChange}
-        title="SKILL MANAGER"
+        title={t("admin.skillsTitle")}
         toolbar={
-          <div className="flex items-center justify-between w-full gap-4">
+          <div className="flex items-center justify-between w-full gap-4 ">
             {!editing && (
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-wider">
                 <div className="p-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
                   <Cpu className="w-3.5 h-3.5 text-cyan-400" />
                 </div>
-                <span>System Intelligence Config</span>
+                <span>{t("admin.skillsSubtitle")}</span>
               </div>
             )}
 
@@ -278,14 +280,14 @@ export function ManageSkillsDialog({
                   "shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all duration-300",
                 )}
               >
-                <Plus className="w-4 h-4 mr-2" /> NEW SKILL
+                <Plus className="w-4 h-4 mr-2" /> {t("admin.skillsNew")}
               </Button>
             )}
           </div>
         }
       >
         {/* 动态网格背景 + 扫描线 */}
-        <div className="skill-dialog-bg absolute inset-0 pointer-events-none z-0" />
+        <div className="skill-dialog-bg absolute inset-0 pointer-events-none z-0 " />
         {/* 装饰光斑 */}
         <div className="absolute -top-32 -right-32 w-80 h-80 bg-cyan-500/8 rounded-full blur-[100px] pointer-events-none z-0" />
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/8 rounded-full blur-[100px] pointer-events-none z-0" />
@@ -294,34 +296,34 @@ export function ManageSkillsDialog({
           <div className="relative z-10">
             <AdminTable
               columns={[
-                "Name",
-                "Display Name",
-                "Handler Type",
-                "Status",
-                "Default",
+                t("admin.skillsColName"),
+                t("admin.skillsColDisplay"),
+                t("admin.skillsColType"),
+                t("admin.skillsColStatus"),
+                t("admin.skillsColDefault"),
               ]}
               loading={loading}
-              emptyText="No active skills detected. Click NEW SKILL to initialize."
+              emptyText={t("admin.skillsEmpty")}
               rows={list.map((s, idx) => ({
                 id: s.id!,
                 cells: [
                   // Name + 行号 + 脉冲点
                   <span
                     key="n"
-                    className="font-mono text-sm text-cyan-300 flex items-center gap-2.5"
+                    className="font-mono text-sm text-cyan-600 dark:text-cyan-300 flex items-center gap-2.5"
                   >
-                    <span className="text-[10px] text-slate-600 w-4 text-right tabular-nums">
+                    <span className="text-[10px] text-muted-foreground w-4 text-right tabular-nums">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500/60 animate-pulse flex-shrink-0" />
                     {s.name}
                   </span>,
-                  <span key="d" className="text-slate-300 font-medium">
+                  <span key="d" className="text-foreground font-medium">
                     {s.display_name || "-"}
                   </span>,
                   <span
                     key="t"
-                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/5 border border-white/10 text-slate-400"
+                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-muted border border-border text-muted-foreground"
                   >
                     {s.handler_type}
                   </span>,
@@ -331,15 +333,16 @@ export function ManageSkillsDialog({
                       "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
                       s.enabled
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
-                        : "bg-slate-800/50 text-slate-500 border-slate-700/50",
+                        : "bg-muted text-muted-foreground border-border",
                     )}
                   >
-                    {s.enabled ? "Active" : "Disabled"}
+                    {s.enabled ? t("admin.active") : t("admin.inactive")}
                   </span>,
-                  <span key="def" className="text-slate-500">
+                  <span key="def" className="text-muted-foreground">
                     {s.is_default && (
                       <span className="flex items-center gap-1 text-amber-400/80 text-xs">
-                        <Star className="w-3 h-3 fill-amber-400/80" /> DEFAULT
+                        <Star className="w-3 h-3 fill-amber-400/80" />
+                        {t("admin.skillsColDefault")}
                       </span>
                     )}
                   </span>,
@@ -362,8 +365,8 @@ export function ManageSkillsDialog({
                 <div className="w-16 h-16 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-center mb-4">
                   <Zap className="w-8 h-8 text-cyan-500/30" />
                 </div>
-                <p className="text-xs text-slate-600 font-mono uppercase tracking-widest">
-                  Awaiting Configuration
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
+                  {t("admin.skillsEmptyList")}
                 </p>
               </div>
             )}
@@ -375,19 +378,21 @@ export function ManageSkillsDialog({
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="group flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-cyan-300 transition-colors"
+                className="group flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors"
               >
-                <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-cyan-500/10 transition-colors">
+                <div className="p-1.5 rounded-md bg-muted group-hover:bg-cyan-500/10 transition-colors">
                   <ArrowLeft className="w-3.5 h-3.5" />
                 </div>
-                BACK TO LIST
+                {t("admin.backToList")}
               </button>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-wider">
                 <Cpu className="w-4 h-4 text-cyan-400" />
-                <span className="text-slate-600">/</span>
-                <span className="text-cyan-400/80">
-                  {editing.id ? editing.name || "Edit Skill" : "New Skill"}
+                <span className="text-muted-foreground/60">/</span>
+                <span className="text-cyan-600 dark:text-cyan-400/80">
+                  {editing.id
+                    ? editing.name || t("admin.skillsEdit")
+                    : t("admin.skillsCreate")}
                 </span>
               </div>
             </div>
@@ -396,14 +401,14 @@ export function ManageSkillsDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-field-wrapper">
                 <AdminFormField
-                  label={FORM_FIELDS.name.label}
+                  label={t("admin.skillsName")}
                   value={editing.name}
                   onChange={(v) => setEditing({ ...editing, name: v })}
                 />
               </div>
               <div className="glass-field-wrapper">
                 <AdminFormField
-                  label={FORM_FIELDS.display_name.label}
+                  label={t("admin.skillsDisplay")}
                   value={editing.display_name}
                   onChange={(v) => setEditing({ ...editing, display_name: v })}
                 />
@@ -412,7 +417,7 @@ export function ManageSkillsDialog({
 
             <div className="glass-field-wrapper">
               <AdminFormField
-                label={FORM_FIELDS.description.label}
+                label={t("admin.skillsDescription")}
                 value={editing.description}
                 onChange={(v) => setEditing({ ...editing, description: v })}
                 textarea
@@ -421,18 +426,18 @@ export function ManageSkillsDialog({
             </div>
 
             {/* 执行配置组 */}
-            <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-4 relative overflow-hidden">
+            <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4 relative overflow-hidden">
               {/* 分组顶部光线 */}
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
 
-              <h3 className="text-xs font-semibold text-cyan-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Execution Config
+              <h3 className="text-xs font-semibold text-cyan-600 dark:text-cyan-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Zap className="w-4 h-4" /> {t("admin.skillsExecution")}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-field-wrapper !p-3">
                   <AdminFormField
-                    label={FORM_FIELDS.handler_type.label}
+                    label={t("admin.skillsHandlerType")}
                     value={editing.handler_type}
                     onChange={(v) =>
                       setEditing({ ...editing, handler_type: v })
@@ -441,7 +446,7 @@ export function ManageSkillsDialog({
                 </div>
                 <div className="glass-field-wrapper !p-3 md:col-span-2">
                   <AdminFormField
-                    label={FORM_FIELDS.endpoint.label}
+                    label={t("admin.skillsEndpoint")}
                     value={editing.endpoint}
                     onChange={(v) => setEditing({ ...editing, endpoint: v })}
                   />
@@ -450,7 +455,7 @@ export function ManageSkillsDialog({
 
               <div className="glass-field-wrapper !p-3">
                 <AdminFormField
-                  label={FORM_FIELDS.handler_ref.label}
+                  label={t("admin.skillsHandlerRef")}
                   value={editing.handler_ref}
                   onChange={(v) => setEditing({ ...editing, handler_ref: v })}
                 />
@@ -460,7 +465,7 @@ export function ManageSkillsDialog({
             {/* Schema 编辑器 */}
             <div className="glass-field-wrapper">
               <AdminFormField
-                label={FORM_FIELDS.input_schema.label}
+                label={t("admin.skillsSchema")}
                 value={
                   typeof editing.input_schema === "string"
                     ? editing.input_schema
@@ -473,13 +478,13 @@ export function ManageSkillsDialog({
             </div>
 
             {/* 开关 & 操作栏 */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-white/[0.06]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border">
               <div className="flex gap-6">
                 {[
-                  { key: "enabled", label: "Enabled", icon: Zap },
+                  { key: "enabled", label: t("admin.enabledLabel"), icon: Zap },
                   {
                     key: "is_default",
-                    label: "Set as Default",
+                    label: t("admin.setAsDefault"),
                     icon: ShieldCheck,
                   },
                 ].map((item) => (
@@ -499,10 +504,10 @@ export function ManageSkillsDialog({
                           })
                         }
                       />
-                      <div className="w-10 h-5 rounded-full bg-slate-800 border border-slate-700 peer-checked:bg-cyan-500/20 peer-checked:border-cyan-500/50 transition-all duration-300" />
-                      <div className="absolute left-1 top-1 w-3 h-3 rounded-full bg-slate-500 peer-checked:bg-cyan-400 peer-checked:translate-x-5 transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+                      <div className="w-10 h-5 rounded-full bg-muted border border-border peer-checked:bg-cyan-500/20 peer-checked:border-cyan-500/50 transition-all duration-300" />
+                      <div className="absolute left-1 top-1 w-3 h-3 rounded-full bg-muted-foreground/60 peer-checked:bg-cyan-400 peer-checked:translate-x-5 transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                     </div>
-                    <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1.5">
                       <item.icon className="w-3.5 h-3.5" />
                       {item.label}
                     </span>
@@ -515,9 +520,9 @@ export function ManageSkillsDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => setEditing(null)}
-                  className="flex-1 sm:flex-none text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
+                  className="flex-1 sm:flex-none text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   size="sm"
@@ -532,11 +537,13 @@ export function ManageSkillsDialog({
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> SAVING
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                      {t("admin.savingUpper")}
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" /> SAVE CHANGES
+                      <Save className="w-4 h-4 mr-2" />{" "}
+                      {t("common.saveChanges")}
                     </>
                   )}
                 </Button>

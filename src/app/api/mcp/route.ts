@@ -24,7 +24,8 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { log } from "@/lib/logger";
 
-export async function GET() {          // 👈 必须有 GET
+export async function GET() {
+  // 👈 必须有 GET
   try {
     const { rows } = await pool.query(
       `SELECT id, name, description, connection_type, connection_api,
@@ -33,7 +34,7 @@ export async function GET() {          // 👈 必须有 GET
        ORDER BY name ASC`,
     );
     // console.log("[MCP] 本次查询数据库Get:", rows);
-    return NextResponse.json({ servers: rows });
+    return NextResponse.json({ mcpServers: rows });
   } catch (err) {
     console.error("Failed to fetch mcp servers:", err);
     return NextResponse.json({ servers: [] }, { status: 500 });
@@ -80,7 +81,6 @@ function buildMcpTools(servers: McpServerRow[]) {
   return result;
 }
 
-
 async function callMcpServer(
   srv: McpServerRow,
   toolName: string,
@@ -108,14 +108,21 @@ async function callMcpServer(
       });
 
       if (!res.ok) {
-        throw new Error(`MCP ${srv.name} HTTP ${res.status}: ${await res.text()}`);
+        throw new Error(
+          `MCP ${srv.name} HTTP ${res.status}: ${await res.text()}`,
+        );
       }
       return res.json();
     }
 
     // ---------- stdio（本地进程）----------
     case "stdio": {
-      const { command, args: cmdArgs = [], env = {}, cwd } = srv.connection_api as {
+      const {
+        command,
+        args: cmdArgs = [],
+        env = {},
+        cwd,
+      } = srv.connection_api as {
         command: string;
         args?: string[];
         env?: Record<string, string>;
@@ -213,7 +220,6 @@ async function callMcpServer(
       throw new Error(`Unsupported connection type: ${srv.connection_type}`);
   }
 }
-
 
 function resolveAuth(srv: McpServerRow): Record<string, string> {
   if (srv.auth_type === "none" || !srv.auth_config) return {};

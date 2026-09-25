@@ -11,18 +11,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useSkills } from "./skills-provider";
+import { useI18n } from "@/components/i18n-provider";
 
 const TYPE_COLOR: Record<string, string> = {
-  http: "text-cyan-300",
-  function: "text-green-400",
-  mcp: "text-purple-300",
+  http: "text-cyan-600 dark:text-cyan-300",
+  function: "text-emerald-600 dark:text-emerald-400",
+  mcp: "text-purple-600 dark:text-purple-300",
 };
 
 const AUTH_COLOR: Record<string, string> = {
-  none: "text-slate-400",
-  api_key: "text-yellow-300",
-  bearer: "text-orange-300",
-  basic: "text-pink-300",
+  none: "text-muted-foreground",
+  api_key: "text-yellow-600 dark:text-yellow-300",
+  bearer: "text-orange-600 dark:text-orange-300",
+  basic: "text-pink-600 dark:text-pink-300",
 };
 
 export function SkillsDialog({
@@ -33,6 +34,7 @@ export function SkillsDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { skills, selected, toggle, isSelected } = useSkills();
+  const { t } = useI18n();
   const [keyword, setKeyword] = useState("");
 
   // fuzzy search: name + display_name + description
@@ -49,61 +51,47 @@ export function SkillsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="
-          !w-[1000px] !max-w-[min(1000px,92vw)] max-h-[90vh] flex flex-col
-          bg-slate-950
-          border border-cyan-400/40
-          text-slate-200
-          shadow-[0_0_40px_rgba(34,211,238,0.25),inset_0_0_20px_rgba(34,211,238,0.05)]
-          backdrop-blur-md
-          rounded-xl
-          [&>button]:text-slate-400 [&>button]:hover:text-cyan-300
-        "
-      >
+      <DialogContent className="flex max-h-[90vh] max-w-[min(1000px,92vw)] flex-col bg-popover text-popover-foreground border-border shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-mono text-cyan-400 tracking-wide">
-            ALL SKILLS
+          <DialogTitle className="text-lg font-semibold tracking-wide text-cyan-600 dark:text-cyan-400">
+            {t("skills.title")}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-400">
-            Select the skills you want to enable. Only the selected skills will
-            be provided to the model.
+          <DialogDescription className="text-sm text-muted-foreground">
+            {t("skills.description")}
           </DialogDescription>
         </DialogHeader>
 
         {/* search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/60" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/70" />
           <Input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Search skills..."
-            className="
-              pl-9
-              bg-slate-900/70
-              border-cyan-400/30
-              text-slate-100
-              placeholder:text-slate-500
-              focus-visible:border-cyan-300/80
-              focus-visible:ring-cyan-400/30
-            "
+            placeholder={t("skills.searchPlaceholder")}
+            className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground focus-visible:border-primary/60 focus-visible:ring-primary/30"
           />
         </div>
 
         {/* skills table */}
-        <div className="flex-1 min-h-0 overflow-y-auto border border-cyan-400/20 rounded-md bg-slate-900/40 custom-scrollbar">
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-card/60 custom-scrollbar">
           <table className="w-full text-sm">
-            <thead className="bg-slate-900/90 sticky top-0 backdrop-blur-sm">
-              <tr className="text-cyan-400">
+            <thead className="sticky top-0 z-10 bg-muted backdrop-blur-sm">
+              <tr className="text-cyan-600 dark:text-cyan-400">
                 <th className="w-10 px-2 py-2"></th>
-                <th className="text-left px-2 py-2 font-mono text-xs">NAME</th>
-                <th className="text-left px-2 py-2 font-mono text-xs">
-                  DISPLAY
+                <th className="px-2 py-2 text-left font-mono text-xs">
+                  {t("skills.name")}
                 </th>
-                <th className="text-left px-2 py-2 font-mono text-xs">TYPE</th>
-                <th className="text-left px-2 py-2 font-mono text-xs">AUTH</th>
-                <th className="text-left px-2 py-2 font-mono text-xs">
-                  DESCRIPTION
+                <th className="px-2 py-2 text-left font-mono text-xs">
+                  {t("skills.display")}
+                </th>
+                <th className="px-2 py-2 text-left font-mono text-xs">
+                  {t("skills.type")}
+                </th>
+                <th className="px-2 py-2 text-left font-mono text-xs">
+                  {t("skills.auth")}
+                </th>
+                <th className="px-2 py-2 text-left font-mono text-xs">
+                  {t("skills.descriptionCol")}
                 </th>
               </tr>
             </thead>
@@ -112,9 +100,9 @@ export function SkillsDialog({
                 <tr>
                   <td
                     colSpan={6}
-                    className="text-center text-slate-500 py-6 text-sm"
+                    className="py-6 text-center text-sm text-muted-foreground"
                   >
-                    No skill found
+                    {t("skills.noResult")}
                   </td>
                 </tr>
               ) : (
@@ -124,11 +112,9 @@ export function SkillsDialog({
                     <tr
                       key={s.id}
                       onClick={() => toggle(s)}
-                      className={`
-                        border-t border-cyan-400/10 cursor-pointer transition-colors
-                        hover:bg-cyan-500/10
-                        ${checked ? "bg-cyan-500/15" : ""}
-                      `}
+                      className={`cursor-pointer border-t border-border transition-colors hover:bg-primary/10 ${
+                        checked ? "bg-primary/10" : ""
+                      }`}
                     >
                       <td className="px-2 py-2">
                         <input
@@ -136,26 +122,26 @@ export function SkillsDialog({
                           checked={checked}
                           onChange={() => toggle(s)}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 accent-cyan-500 cursor-pointer"
+                          className="size-4 cursor-pointer accent-cyan-600"
                         />
                       </td>
-                      <td className="px-2 py-2 text-slate-100 font-mono text-xs">
+                      <td className="px-2 py-2 font-mono text-xs text-foreground">
                         {s.name}
                       </td>
-                      <td className="px-2 py-2 text-slate-100 font-medium">
+                      <td className="px-2 py-2 font-medium text-foreground">
                         {s.display_name ?? "-"}
                       </td>
                       <td
-                        className={`px-2 py-2 text-xs ${TYPE_COLOR[s.handler_type] ?? "text-slate-400"}`}
+                        className={`px-2 py-2 text-xs ${TYPE_COLOR[s.handler_type] ?? "text-muted-foreground"}`}
                       >
                         {s.handler_type}
                       </td>
                       <td
-                        className={`px-2 py-2 text-xs ${AUTH_COLOR[s.auth_type ?? "none"] ?? "text-slate-400"}`}
+                        className={`px-2 py-2 text-xs ${AUTH_COLOR[s.auth_type ?? "none"] ?? "text-muted-foreground"}`}
                       >
                         {s.auth_type ?? "none"}
                       </td>
-                      <td className="px-2 py-2 text-xs text-slate-400 truncate max-w-[280px]">
+                      <td className="max-w-[280px] truncate px-2 py-2 text-xs text-muted-foreground">
                         {s.description}
                       </td>
                     </tr>
@@ -167,23 +153,20 @@ export function SkillsDialog({
         </div>
 
         {/* selected skills */}
-        <div className="pt-3 border-t border-cyan-400/20">
-          <div className="text-xs font-mono text-cyan-400 mb-2 tracking-wide">
-            SELECTED SKILLS:
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 text-xs font-semibold tracking-wide text-cyan-600 dark:text-cyan-400">
+            {t("skills.selected")}
           </div>
-          <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto custom-scrollbar">
+          <div className="flex max-h-[80px] flex-wrap gap-1.5 overflow-y-auto custom-scrollbar">
             {selected.length === 0 ? (
-              <span className="text-xs text-slate-500 italic">None</span>
+              <span className="text-xs text-muted-foreground italic">
+                {t("common.none")}
+              </span>
             ) : (
               selected.map((s) => (
                 <span
                   key={s.id}
-                  className="
-                    inline-flex items-center gap-1 px-2 py-0.5 rounded-md
-                    bg-cyan-500/15 text-cyan-300 text-xs
-                    border border-cyan-400/30
-                    shadow-[0_0_8px_rgba(34,211,238,0.15)]
-                  "
+                  className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/15 px-2 py-0.5 text-xs text-cyan-700 dark:text-cyan-300"
                 >
                   {s.display_name ?? s.name}
                 </span>

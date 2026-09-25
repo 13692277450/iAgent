@@ -5,6 +5,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import UploadDropzone from "@/components/assistant-ui/elements/UploadDropzone";
+import { Trash2, X, Upload } from "lucide-react";
+import { useI18n } from "./i18n-provider";
 
 type Source = {
   id: number;
@@ -26,6 +28,8 @@ export default function RAGDetailDialog({
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { t } = useI18n();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -39,119 +43,182 @@ export default function RAGDetailDialog({
     refresh();
   }, [refresh]);
 
+  const handleDelete = useCallback(
+    async (id: number, title: string) => {
+      if (!confirm(t("rag.deleteConfirmSource", { title }))) {
+        return;
+      }
+      setDeletingId(id);
+      try {
+        const res = await fetch(`/api/rag/sources/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? `HTTP ${res.status}`);
+        }
+        await refresh();
+        onChanged();
+      } catch (err) {
+        console.error("[RAG] delete failed:", err);
+        alert(t("rag.deleteFailed") + "：" + (err as Error).message);
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [refresh, onChanged, t],
+  );
+
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="flex h-[620px] w-full max-w-4xl flex-col rounded-2xl
-                   border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+        className="glow-card flex h-[85vh] w-full max-w-5xl flex-col rounded-2xl p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 顶部 */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-100">RAG 数据源</h2>
+        <div className="flex shrink-0 items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground">
+            {t("rag.detail")}
+          </h2>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowUpload((v) => !v)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold
-                         text-white transition hover:bg-blue-500"
+              className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${
+                showUpload
+                  ? "bg-muted-foreground hover:bg-muted-foreground/80"
+                  : "bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500"
+              }`}
             >
-              {showUpload ? "收起上传" : "＋ 添加 RAG 数据"}
+              <Upload className="size-4" />
+              {showUpload ? t("rag.collapseUploads") : t("rag.addData")}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-600 px-3 py-2 text-sm
-                         text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-muted"
+              aria-label={t("common.close")}
             >
-              关闭
+              <X className="size-4" />
             </button>
           </div>
         </div>
 
         {/* 安全与权限 */}
-        <p className="mt-2 text-xs text-slate-400">
-          🔒 安全级别：Internal　|　👥 可见范围：按部门隔离（RLS）　|　 📜
-          权限：仅授权部门可检索与引用
+        <p className="mt-2 shrink-0 text-xs text-muted-foreground">
+          {t("ragNotice.security")}
         </p>
 
-        {/* 上传区 */}
+        {/* 上传区：独立滚动，最大高度限制 */}
         {showUpload && (
-          <UploadDropzone
-            onDone={async () => {
-              setShowUpload(false);
-              await refresh();
-              onChanged();
-            }}
-          />
+          <div className="mt-4 max-h-[45vh] shrink-0 overflow-y-auto rounded-xl border border-primary/20 bg-muted/50 p-1 custom-scrollbar">
+            <UploadDropzone
+              onDone={() => setShowUpload(false)}
+              onUploaded={async () => {
+                await refresh();
+                onChanged();
+              }}
+            />
+          </div>
         )}
+{/* 数据列表：占剩余空间 */}
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+          <div className="mb-2 flex shrink-0 items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {t("common.total")} {sources.length} {t("common.dataSources")}
+            </span>
+          </div>
 
-        {/* 列表 */}
-        <div className="mt-4 flex-1 overflow-auto rounded-xl border border-slate-700">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-slate-800 text-slate-300">
-              <tr>
-                <th className="px-4 py-2 text-left">文档名称</th>
-                <th className="px-4 py-2 text-left">类型</th>
-                <th className="px-4 py-2 text-left">所属部门</th>
-                <th className="px-4 py-2 text-right">分块数</th>
-                <th className="px-4 py-2 text-left">入库时间</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+          <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border custom-scrollbar">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-muted text-foreground">
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-6 text-center text-slate-500"
-                  >
-                    加载中…
-                  </td>
+                  <th className="px-4 py-2 text-left font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.docTitle")}
+                  </th>
+                  <th className="px-4 py-2 text-left font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.docType")}
+                  </th>
+                  <th className="px-4 py-2 text-left font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.departments")}
+                  </th>
+                  <th className="px-4 py-2 text-right font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.chunkCount")}
+                  </th>
+                  <th className="px-4 py-2 text-left font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.uploadTime")}
+                  </th>
+                  <th className="px-4 py-2 text-right font-mono text-xs text-cyan-600 dark:text-cyan-400">
+                    {t("rag.action")}
+                  </th>
                 </tr>
-              ) : sources.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-6 text-center text-slate-500"
-                  >
-                    暂无数据，点击「添加 RAG 数据」上传
-                  </td>
-                </tr>
-              ) : (
-                sources.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="border-t border-slate-800 text-slate-200
-                               hover:bg-slate-800/50"
-                  >
-                    <td className="px-4 py-2">{s.title}</td>
-                    <td className="px-4 py-2 text-slate-400">
-                      {s.docType ?? "-"}
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-6 text-center text-muted-foreground"
+                    >
+                      {t("common.loading")}
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {s.departments.map((d) => (
-                          <span
-                            key={d}
-                            className="rounded bg-blue-500/20 px-2 py-0.5
-                                       text-xs text-blue-300"
-                          >
-                            {d}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-right">{s.chunkCount}</td>
-                    <td className="px-4 py-2 text-slate-400">{s.ingestedAt}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : sources.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-6 text-center text-muted-foreground"
+                    >
+                      {t("rag.noData")}
+                    </td>
+                  </tr>
+                ) : (
+                  sources.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="border-t border-border text-foreground transition-colors hover:bg-muted/60"
+                    >
+                      <td className="px-4 py-2">{s.title}</td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {s.docType ?? "-"}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {s.departments.map((d) => (
+                            <span
+                              key={d}
+                              className="rounded bg-cyan-500/15 px-2 py-0.5 text-xs text-cyan-700 dark:text-cyan-300"
+                            >
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-right">{s.chunkCount}</td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {s.ingestedAt}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(s.id, s.title)}
+                          disabled={deletingId === s.id}
+                          className="rounded p-1.5 text-red-500/60 transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
+                          title={t("rag.deleteTitle")}
+                          aria-label={`${t("rag.deleteTitle")} ${s.title}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

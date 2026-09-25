@@ -10,8 +10,10 @@ export default async function TokenUsagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <TokenCalendarContent />
+    <div className="tech-bg min-h-screen p-8">
+      <div className="mx-auto max-w-3xl">
+        <TokenCalendarContent />
+      </div>
     </div>
   );
 }

@@ -66,6 +66,8 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
+  useRef, // 👈 加
   type ComponentType,
   type FC,
   type PropsWithChildren,
@@ -120,7 +122,7 @@ const taskAwareGroupBy = (
 export type ThreadProps = {
   components?: ThreadComponents | undefined;
   autoFocus?: boolean | undefined;
-  composerToolbar?: ReactNode; // 👈 新增
+  composerToolbar?: ReactNode;
 };
 
 const EMPTY_COMPONENTS: ThreadComponents = {};
@@ -128,7 +130,6 @@ const EMPTY_COMPONENTS: ThreadComponents = {};
 const ThreadComponentsContext =
   createContext<ThreadComponents>(EMPTY_COMPONENTS);
 
-// 👇 新增：把工具条从外部传进来
 const ComposerToolbarContext = createContext<ReactNode>(null);
 const useComposerToolbar = () => useContext(ComposerToolbarContext);
 
@@ -421,6 +422,25 @@ const ThreadSuggestionItem: FC = () => {
 };
 
 const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // 监听输入框内容变化，自动滚到底 + 光标移到末尾
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+
+    // 只在输入框聚焦时操作（避免干扰用户主动编辑）
+    if (document.activeElement !== el) return;
+
+    // 滚动到底部
+    el.scrollTop = el.scrollHeight;
+
+    // 光标移到末尾
+    const len = el.value.length;
+    if (el.selectionStart !== len) {
+      el.setSelectionRange(len, len);
+    }
+  });
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <ComposerPrimitive.AttachmentDropzone
@@ -433,6 +453,7 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
       >
         <ComposerAttachments />
         <ComposerPrimitive.Input
+          ref={inputRef} // 👈 加 ref
           placeholder="Send a message..."
           className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none"
           rows={1}
@@ -447,88 +468,87 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
 };
 
 const ComposerAction: FC = () => {
-  const toolbar = useComposerToolbar(); // 👇 新增
+  const toolbar = useComposerToolbar();
 
   return (
-    <div className="aui-composer-action-wrapper relative flex items-center justify-between gap-2 border-b-cyan-400">
-      {/* 左边：工具条 + 附件按钮 */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {toolbar}
-        <ComposerAddAttachment />
-      </div>
+    <div className="aui-composer-action-wrapper relative flex items-center justify-between gap-2">
+      {/* 左侧：工具条 */}
+      <div className="flex min-w-0 items-center gap-2 flex-wrap">{toolbar}</div>
 
-      {/* 原有：附件 + 发送/停止 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <AuiIf condition={(s) => s.thread.capabilities.dictation}>
-            <AuiIf condition={(s) => s.composer.dictation == null}>
-              <ComposerPrimitive.Dictate
-                render={
-                  <TooltipIconButton
-                    tooltip="Voice input"
-                    side="bottom"
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="aui-composer-dictate text-muted-foreground hover:text-foreground size-7 rounded-full"
-                    aria-label="Start voice input"
-                  />
-                }
-              >
-                <MicIcon className="aui-composer-dictate-icon size-4" />
-              </ComposerPrimitive.Dictate>
-            </AuiIf>
-            <AuiIf condition={(s) => s.composer.dictation != null}>
-              <ComposerPrimitive.StopDictation
-                render={
-                  <TooltipIconButton
-                    tooltip="Stop dictation"
-                    side="bottom"
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="aui-composer-stop-dictation text-destructive size-7 rounded-full"
-                    aria-label="Stop voice input"
-                  />
-                }
-              >
-                <SquareIcon className="aui-composer-stop-dictation-icon size-3.5 animate-pulse fill-current" />
-              </ComposerPrimitive.StopDictation>
-            </AuiIf>
-          </AuiIf>
-          <AuiIf condition={(s) => !s.thread.isRunning}>
-            <ComposerPrimitive.Send
+      {/* 右侧：附件 + 语音 + 发送/停止 */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <ComposerAddAttachment />
+
+        <AuiIf condition={(s) => s.thread.capabilities.dictation}>
+          <AuiIf condition={(s) => s.composer.dictation == null}>
+            <ComposerPrimitive.Dictate
               render={
                 <TooltipIconButton
-                  tooltip="Send message"
+                  tooltip="Voice input"
                   side="bottom"
                   type="button"
-                  variant="default"
+                  variant="ghost"
                   size="icon"
-                  className="aui-composer-send size-7 rounded-full"
-                  aria-label="Send message"
+                  className="aui-composer-dictate text-muted-foreground hover:text-foreground size-7 rounded-full"
+                  aria-label="Start voice input"
                 />
               }
             >
-              <ArrowUpIcon className="aui-composer-send-icon size-4" />
-            </ComposerPrimitive.Send>
+              <MicIcon className="aui-composer-dictate-icon size-4 gap-1" />
+            </ComposerPrimitive.Dictate>
           </AuiIf>
-          <AuiIf condition={(s) => s.thread.isRunning}>
-            <ComposerPrimitive.Cancel
+          <AuiIf condition={(s) => s.composer.dictation != null}>
+            <ComposerPrimitive.StopDictation
               render={
-                <Button
+                <TooltipIconButton
+                  tooltip="Stop dictation"
+                  side="bottom"
                   type="button"
-                  variant="default"
+                  variant="ghost"
                   size="icon"
-                  className="aui-composer-cancel size-7 rounded-full"
-                  aria-label="Stop generating"
+                  className="aui-composer-stop-dictation text-destructive size-7 rounded-full"
+                  aria-label="Stop voice input"
                 />
               }
             >
-              <SquareIcon className="aui-composer-cancel-icon size-3.5 fill-current" />
-            </ComposerPrimitive.Cancel>
+              <SquareIcon className="aui-composer-stop-dictation-icon size-3.5 animate-pulse fill-current" />
+            </ComposerPrimitive.StopDictation>
           </AuiIf>
-        </div>
+        </AuiIf>
+
+        <AuiIf condition={(s) => !s.thread.isRunning}>
+          <ComposerPrimitive.Send
+            render={
+              <TooltipIconButton
+                tooltip="Send message"
+                side="bottom"
+                type="button"
+                variant="default"
+                size="icon"
+                className="aui-composer-send size-7 rounded-full"
+                aria-label="Send message"
+              />
+            }
+          >
+            <ArrowUpIcon className="aui-composer-send-icon size-4" />
+          </ComposerPrimitive.Send>
+        </AuiIf>
+
+        <AuiIf condition={(s) => s.thread.isRunning}>
+          <ComposerPrimitive.Cancel
+            render={
+              <Button
+                type="button"
+                variant="default"
+                size="icon"
+                className="aui-composer-cancel size-7 rounded-full"
+                aria-label="Stop generating"
+              />
+            }
+          >
+            <SquareIcon className="aui-composer-cancel-icon size-3.5 fill-current" />
+          </ComposerPrimitive.Cancel>
+        </AuiIf>
       </div>
     </div>
   );
@@ -627,21 +647,18 @@ const AssistantMessage: FC = () => {
               case "indicator":
                 return (
                   <div className="flex items-center gap-2 px-2 py-1">
-                    {/* 彩色光点 */}
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" />
                     </span>
-
-                    {/* 渐变文字 */}
                     <span
                       className="
-          bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500
-          bg-[length:200%_auto]
-          bg-clip-text text-transparent
-          text-sm font-medium
-          animate-gradient
-        "
+                        bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500
+                        bg-[length:200%_auto]
+                        bg-clip-text text-transparent
+                        text-sm font-medium
+                        animate-gradient
+                      "
                     >
                       AI Thinking...
                     </span>

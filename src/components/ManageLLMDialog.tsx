@@ -20,6 +20,7 @@ import {
   EyeOff,
   ShieldAlert,
 } from "lucide-react";
+import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 
 // ==========================================
@@ -51,7 +52,7 @@ const LLM_STYLES = `
 
   /* --- 表单玻璃卡片（orange 光线） --- */
   .llm-glass-form .glass-field-wrapper {
-    @apply p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] transition-all duration-300 relative overflow-hidden;
+    @apply p-4 rounded-xl bg-muted/40 border border-border transition-all duration-300 relative overflow-hidden;
   }
   .llm-glass-form .glass-field-wrapper::after {
     content: '';
@@ -61,7 +62,7 @@ const LLM_STYLES = `
     transition: opacity 0.3s;
   }
   .llm-glass-form .glass-field-wrapper:hover {
-    @apply border-white/[0.12] bg-white/[0.05];
+    @apply border-border bg-muted/60;
   }
   .llm-glass-form .glass-field-wrapper:hover::after { opacity: 1; }
 
@@ -69,7 +70,7 @@ const LLM_STYLES = `
   .llm-glass-form input,
   .llm-glass-form textarea,
   .llm-glass-form select {
-    @apply !bg-black/30 !border-white/10 !text-slate-200 !placeholder:text-slate-600 !rounded-lg !transition-all !duration-300;
+    @apply !bg-card !border-border !text-foreground !placeholder:text-muted-foreground !rounded-lg !transition-all !duration-300;
   }
   .llm-glass-form input:focus,
   .llm-glass-form textarea:focus,
@@ -77,7 +78,7 @@ const LLM_STYLES = `
     @apply !border-orange-500/50 !ring-1 !ring-orange-500/20 !outline-none !shadow-[0_0_12px_rgba(249,115,22,0.15)];
   }
   .llm-glass-form label {
-    @apply !text-xs !font-semibold !uppercase !tracking-widest !text-slate-400 !mb-2 !flex !items-center !gap-2;
+    @apply !text-xs !font-semibold !uppercase !tracking-widest !text-muted-foreground !mb-2 !flex !items-center !gap-2;
   }
 
   /* --- API Key 字段特殊样式 --- */
@@ -117,6 +118,7 @@ export function ManageLLMDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [list, setList] = useState<LLM[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<LLM | null>(null);
@@ -158,7 +160,7 @@ export function ManageLLMDialog({
   };
 
   const remove = async (id: number) => {
-    if (!confirm("确定删除这个 LLM 配置吗？")) return;
+    if (!confirm(t("admin.llmDeleteConfirm"))) return;
     await fetch(`/api/admin/llms/${id}`, { method: "DELETE" });
     await load();
   };
@@ -170,15 +172,15 @@ export function ManageLLMDialog({
       <AdminDialogShell
         open={open}
         onOpenChange={onOpenChange}
-        title="MANAGE LLM"
+        title={t("admin.llmTitle")}
         toolbar={
           <div className="flex items-center justify-between w-full gap-4">
             {!editing && (
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-wider">
                 <div className="p-1.5 rounded-md bg-orange-500/10 border border-orange-500/20">
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
                 </div>
-                <span>Inference Engine Config</span>
+                <span>{t("admin.llmSubtitle")}</span>
               </div>
             )}
 
@@ -194,7 +196,7 @@ export function ManageLLMDialog({
                   "shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all duration-300",
                 )}
               >
-                <Plus className="w-4 h-4 mr-2" /> NEW PROVIDER
+                <Plus className="w-4 h-4 mr-2" /> {t("admin.llmNew")}
               </Button>
             )}
           </div>
@@ -209,17 +211,22 @@ export function ManageLLMDialog({
         {!editing ? (
           <div className="relative z-10">
             <AdminTable
-              columns={["Display Name", "Model", "Base URL", "Default"]}
+              columns={[
+                t("admin.llmName"),
+                t("admin.llmModel"),
+                t("admin.llmUrl"),
+                t("admin.llmColDefault"),
+              ]}
               loading={loading}
-              emptyText="No LLM providers configured. Click NEW PROVIDER to add one."
+              emptyText={t("admin.llmEmpty")}
               rows={list.map((l, idx) => ({
                 id: l.id!,
                 cells: [
                   <span
                     key="n"
-                    className="font-mono text-sm text-orange-300 flex items-center gap-2.5"
+                    className="font-mono text-sm text-orange-600 dark:text-orange-300 flex items-center gap-2.5"
                   >
-                    <span className="text-[10px] text-slate-600 w-4 text-right tabular-nums">
+                    <span className="text-[10px] text-muted-foreground w-4 text-right tabular-nums">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                     <span className="w-1.5 h-1.5 rounded-full bg-orange-500/60 animate-pulse flex-shrink-0" />
@@ -227,13 +234,13 @@ export function ManageLLMDialog({
                   </span>,
                   <span
                     key="m"
-                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/5 border border-white/10 text-slate-300"
+                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-muted border border-border text-foreground"
                   >
                     {l.llm_model}
                   </span>,
                   <span
                     key="u"
-                    className="text-slate-500 text-xs font-mono truncate max-w-[200px] inline-block align-middle"
+                    className="text-muted-foreground text-xs font-mono truncate max-w-[200px] inline-block align-middle"
                     title={l.llm_baseurl}
                   >
                     {l.llm_baseurl}
@@ -241,10 +248,11 @@ export function ManageLLMDialog({
                   <span key="d">
                     {l.is_default ? (
                       <span className="inline-flex items-center gap-1 text-amber-400/80 text-xs font-bold uppercase tracking-wider">
-                        <Star className="w-3 h-3 fill-amber-400/80" /> Default
+                        <Star className="w-3 h-3 fill-amber-400/80" />
+                        {t("admin.llmColDefault")}
                       </span>
                     ) : (
-                      <span className="text-slate-600 text-xs">—</span>
+                      <span className="text-muted-foreground text-xs">—</span>
                     )}
                   </span>,
                 ],
@@ -262,8 +270,8 @@ export function ManageLLMDialog({
                 <div className="w-16 h-16 rounded-2xl bg-orange-500/5 border border-orange-500/10 flex items-center justify-center mb-4">
                   <Cpu className="w-8 h-8 text-orange-500/30" />
                 </div>
-                <p className="text-xs text-slate-600 font-mono uppercase tracking-widest">
-                  No Inference Engines
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
+                  {t("admin.llmEmptyList")}
                 </p>
               </div>
             )}
@@ -275,21 +283,21 @@ export function ManageLLMDialog({
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="group flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-orange-300 transition-colors"
+                className="group flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-orange-600 dark:hover:text-orange-300 transition-colors"
               >
-                <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-orange-500/10 transition-colors">
+                <div className="p-1.5 rounded-md bg-muted group-hover:bg-orange-500/10 transition-colors">
                   <ArrowLeft className="w-3.5 h-3.5" />
                 </div>
-                BACK TO LIST
+                {t("admin.backToList")}
               </button>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-wider">
                 <Flame className="w-4 h-4 text-orange-400" />
-                <span className="text-slate-600">/</span>
-                <span className="text-orange-400/80">
+                <span className="text-muted-foreground/60">/</span>
+                <span className="text-orange-600 dark:text-orange-400/80">
                   {editing.id
-                    ? editing.llm_name || "Edit Provider"
-                    : "New Provider"}
+                    ? editing.llm_name || t("admin.llmEdit")
+                    : t("admin.llmCreate")}
                 </span>
               </div>
             </div>
@@ -298,14 +306,14 @@ export function ManageLLMDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-field-wrapper">
                 <AdminFormField
-                  label="Display Name"
+                  label={t("admin.llmName")}
                   value={editing.llm_name}
                   onChange={(v) => setEditing({ ...editing, llm_name: v })}
                 />
               </div>
               <div className="glass-field-wrapper">
                 <AdminFormField
-                  label="Model Identifier"
+                  label={t("admin.llmModel")}
                   value={editing.llm_model}
                   onChange={(v) => setEditing({ ...editing, llm_model: v })}
                 />
@@ -313,15 +321,15 @@ export function ManageLLMDialog({
             </div>
 
             {/* === 连接配置组 === */}
-            <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-4 relative overflow-hidden">
+            <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-              <h3 className="text-xs font-semibold text-orange-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Globe className="w-4 h-4" /> Connection Config
+              <h3 className="text-xs font-semibold text-orange-600 dark:text-orange-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Globe className="w-4 h-4" /> {t("admin.llmConnection")}
               </h3>
 
               <div className="glass-field-wrapper !p-3">
                 <AdminFormField
-                  label="Base URL"
+                  label={t("admin.llmUrl")}
                   value={editing.llm_baseurl}
                   onChange={(v) => setEditing({ ...editing, llm_baseurl: v })}
                 />
@@ -332,11 +340,11 @@ export function ManageLLMDialog({
                 <div className="absolute top-3 right-3 z-10">
                   <ShieldAlert
                     className="w-4 h-4 text-amber-500/40"
-                    aria-label="Sensitive credential"
+                    aria-label={t("admin.sensitiveCredential")}
                   />
                 </div>
                 <AdminFormField
-                  label="API Key"
+                  label={t("admin.apiKey")}
                   value={editing.llm_apikey}
                   onChange={(v) => setEditing({ ...editing, llm_apikey: v })}
                   showToggle
@@ -356,25 +364,25 @@ export function ManageLLMDialog({
                       setEditing({ ...editing, is_default: e.target.checked })
                     }
                   />
-                  <div className="w-10 h-5 rounded-full bg-slate-800 border border-slate-700 peer-checked:bg-orange-500/20 peer-checked:border-orange-500/50 transition-all duration-300" />
-                  <div className="absolute left-1 top-1 w-3 h-3 rounded-full bg-slate-500 peer-checked:bg-orange-400 peer-checked:translate-x-5 transition-all duration-300 shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+                  <div className="w-10 h-5 rounded-full bg-muted border border-border peer-checked:bg-orange-500/20 peer-checked:border-orange-500/50 transition-all duration-300" />
+                  <div className="absolute left-1 top-1 w-3 h-3 rounded-full bg-muted-foreground/60 peer-checked:bg-orange-400 peer-checked:translate-x-5 transition-all duration-300 shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                 </div>
-                <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors flex items-center gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1.5">
                   <Star className="w-3.5 h-3.5" />
-                  Set as Default Provider
+                  {t("admin.setDefault")}
                 </span>
               </label>
             </div>
 
             {/* === 操作栏 === */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setEditing(null)}
-                className="text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 size="sm"
@@ -389,11 +397,12 @@ export function ManageLLMDialog({
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> SAVING
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                    {t("admin.savingUpper")}
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" /> SAVE CHANGES
+                    <Save className="w-4 h-4 mr-2" /> {t("common.saveChanges")}
                   </>
                 )}
               </Button>

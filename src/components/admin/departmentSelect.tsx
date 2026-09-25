@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/i18n-provider";
 
 export function DepartmentSelect({
   value,
@@ -14,6 +15,7 @@ export function DepartmentSelect({
   const [departments, setDepartments] = useState<
     Array<{ code: string; name: string }>
   >([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     fetch("/api/departments")
@@ -27,9 +29,9 @@ export function DepartmentSelect({
       <select
         value={value[0] ?? ""}
         onChange={(e) => onChange(e.target.value ? [e.target.value] : [])}
-        className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-cyan-400/30 text-xs text-slate-100 outline-none focus:border-cyan-400"
+        className="mt-1 w-full rounded border border-border bg-card px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
       >
-        <option value="">-- 选择部门 --</option>
+        <option value="">{t("admin.selectDepartment")}</option>
         {departments.map((d) => (
           <option key={d.code} value={d.code}>
             {d.name} ({d.code})
@@ -39,16 +41,15 @@ export function DepartmentSelect({
     );
   }
 
-  // 多选：用 checkbox 列表
   return (
-    <div className="mt-1 max-h-32 overflow-y-auto rounded bg-slate-900 border border-cyan-400/30 p-2 space-y-1">
+    <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded border border-border bg-card p-2">
       {departments.length === 0 ? (
-        <div className="text-xs text-slate-500">加载中…</div>
+        <div className="text-xs text-muted-foreground">{t("common.loading")}</div>
       ) : (
         departments.map((d) => (
           <label
             key={d.code}
-            className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer"
+            className="flex cursor-pointer items-center gap-2 text-xs text-foreground"
           >
             <input
               type="checkbox"
@@ -57,8 +58,9 @@ export function DepartmentSelect({
                 if (e.target.checked) onChange([...value, d.code]);
                 else onChange(value.filter((c) => c !== d.code));
               }}
+              className="accent-cyan-600"
             />
-            {d.name} <span className="text-slate-500">({d.code})</span>
+            {d.name} <span className="text-muted-foreground">({d.code})</span>
           </label>
         ))
       )}

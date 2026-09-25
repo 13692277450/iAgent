@@ -1,4 +1,5 @@
 // src/components/mcp-provider.tsx
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 "use client";
 import {
   createContext,
@@ -31,6 +32,7 @@ type McpContextValue = {
   isSelected: (id: number) => boolean;
   cleanAll: () => void; // 清空
   loading: boolean;
+  refresh: () => void;
 };
 
 const McpContext = createContext<McpContextValue | null>(null);
@@ -40,23 +42,47 @@ export function McpProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<McpServer[]>([]);
   const [selected, setSelected] = useState<McpServer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  // 拉取所有 server
+  const refresh = useCallback(() => {
+    setRefreshTick((t) => t + 1);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+
     fetch("/api/mcp")
       .then((r) => r.json())
       .then((d) => {
-        if (!cancelled) setServers(d.servers ?? []);
+        if (!cancelled) setServers(d.mcpServers ?? []);
       })
       .catch((err) => console.error("Failed to fetch mcp servers", err))
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshTick]);
+
+  // 拉取所有 server
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   fetch("/api/mcp")
+  //     .then((r) => r.json())
+  //     .then((d) => {
+  //       if (!cancelled) setServers(d.servers ?? []);
+  //     })
+  //     .catch((err) => console.error("Failed to fetch mcp servers", err))
+  //     .finally(() => {
+  //       if (!cancelled) setLoading(false);
+  //     });
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, []);
 
   // 🚨 关键：按 id 去重，避免重复选中
   const toggle = useCallback((server: McpServer) => {
@@ -78,7 +104,15 @@ export function McpProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <McpContextProvider
-      value={{ servers, selected, toggle, isSelected, cleanAll, loading }}
+      value={{
+        servers,
+        selected,
+        toggle,
+        isSelected,
+        cleanAll,
+        loading,
+        refresh,
+      }}
     >
       {children}
     </McpContextProvider>

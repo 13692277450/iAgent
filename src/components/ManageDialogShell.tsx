@@ -26,18 +26,18 @@ export function ManageDialogShell({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${width} max-h-[85vh] flex flex-col bg-slate-950 border border-cyan-400/30 text-slate-100`}
+        className={`${width} flex max-h-[85vh] flex-col border border-border bg-popover text-popover-foreground shadow-2xl`}
       >
         <DialogHeader>
-          <DialogTitle className="text-sm font-mono text-cyan-400">
+          <DialogTitle className="font-mono text-sm text-cyan-600 dark:text-cyan-400">
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
           {children}
         </div>
         {footer && (
-          <div className="flex justify-end gap-2 pt-2 border-t border-cyan-400/20">
+          <div className="flex justify-end gap-2 border-t border-border pt-2">
             {footer}
           </div>
         )}

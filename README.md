@@ -66,3 +66,10 @@ MCP Server option
 CRUD UI of skills, MCP servers, system_prompts, LLMs, etc.
 
 ![alt text](image-8.png)
+
+2026-09-24 add Rag data upload dialog,support multi files upload and progress bar.
+![alt text](image-9.png)
+
+
+2026-09-25 Add Microphone input option, pretty UI.
+![alt text](image-10.png)

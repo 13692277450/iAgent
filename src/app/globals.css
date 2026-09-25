@@ -68,6 +68,132 @@
     }
   }
 }
+/* ============ 主题变量 ============
+ * 清新科技风：浅色 = 清透冷白 + 青蓝点缀
+ * 深色   = 深邃午夜蓝 + 霓虹青发光
+ */
+:root {
+  /* 基础色 */
+  --background: oklch(0.975 0.006 230);
+  --foreground: oklch(0.22 0.03 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 255);
+
+  /* 主色：科技青蓝 */
+  --primary: oklch(0.55 0.16 245);
+  --primary-foreground: oklch(0.99 0.01 220);
+
+  --secondary: oklch(0.945 0.012 230);
+  --secondary-foreground: oklch(0.32 0.05 250);
+
+  --muted: oklch(0.942 0.01 230);
+  --muted-foreground: oklch(0.5 0.04 250);
+
+  --accent: oklch(0.93 0.045 220);
+  --accent-foreground: oklch(0.32 0.05 250);
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  --border: oklch(0.88 0.02 230);
+  --input: oklch(0.87 0.02 230);
+  --ring: oklch(0.65 0.14 245);
+
+  /* 图表色（清新渐变） */
+  --chart-1: oklch(0.62 0.18 240);
+  --chart-2: oklch(0.72 0.16 190);
+  --chart-3: oklch(0.6 0.2 300);
+  --chart-4: oklch(0.68 0.16 140);
+  --chart-5: oklch(0.55 0.2 45);
+
+  --radius: 0.75rem;
+
+  /* 侧边栏 */
+  --sidebar: oklch(0.985 0.004 230);
+  --sidebar-foreground: oklch(0.22 0.03 255);
+  --sidebar-primary: oklch(0.55 0.16 245);
+  --sidebar-primary-foreground: oklch(0.99 0.01 220);
+  --sidebar-accent: oklch(0.93 0.04 220);
+  --sidebar-accent-foreground: oklch(0.32 0.05 250);
+  --sidebar-border: oklch(0.88 0.02 230);
+  --sidebar-ring: oklch(0.65 0.14 245);
+
+  /* Composer 输入框（浅色模式） */
+  --composer-border: oklch(0.62 0.14 245 / 0.5);
+  --composer-border-focus: oklch(0.58 0.15 245 / 0.85);
+  --composer-border-drag: oklch(0.58 0.15 245);
+
+  color-scheme: light;
+}
+
+.dark {
+  --background: oklch(0.17 0.022 255);
+  --foreground: oklch(0.94 0.012 230);
+  --card: oklch(0.215 0.026 255);
+  --card-foreground: oklch(0.94 0.012 230);
+  --popover: oklch(0.215 0.026 255);
+  --popover-foreground: oklch(0.94 0.012 230);
+
+  --primary: oklch(0.78 0.14 205);
+  --primary-foreground: oklch(0.15 0.03 255);
+
+  --secondary: oklch(0.27 0.03 255);
+  --secondary-foreground: oklch(0.94 0.012 230);
+
+  --muted: oklch(0.25 0.028 255);
+  --muted-foreground: oklch(0.66 0.035 250);
+
+  --accent: oklch(0.28 0.05 245);
+  --accent-foreground: oklch(0.94 0.012 230);
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.75 0.13 205);
+
+  --chart-1: oklch(0.75 0.15 205);
+  --chart-2: oklch(0.65 0.16 320);
+  --chart-3: oklch(0.72 0.15 250);
+  --chart-4: oklch(0.6 0.16 160);
+  --chart-5: oklch(0.68 0.17 55);
+
+  --sidebar: oklch(0.19 0.024 255);
+  --sidebar-foreground: oklch(0.94 0.012 230);
+  --sidebar-primary: oklch(0.78 0.14 205);
+  --sidebar-primary-foreground: oklch(0.15 0.03 255);
+  --sidebar-accent: oklch(0.27 0.05 245);
+  --sidebar-accent-foreground: oklch(0.94 0.012 230);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.75 0.13 205);
+
+  /* Composer 输入框（深色模式） */
+  --composer-border: oklch(0.75 0.13 205 / 0.8);
+  --composer-border-focus: oklch(0.82 0.13 205 / 1);
+  --composer-border-drag: oklch(0.82 0.13 205);
+
+  color-scheme: dark;
+}
+/* ============ 基础 ============ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  /* 选中色 */
+  ::selection {
+    background: oklch(0.78 0.14 205 / 0.35);
+  }
+}
 
 /* ============ 滚动条工具类 ============ */
 
@@ -81,137 +207,43 @@
   scrollbar-width: none;
 }
 
-/* 自定义滚动条（青色科技风） */
+/* 自定义滚动条（随主题变化） */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: color-mix(in oklch, var(--muted) 60%, transparent);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.4);
+  background: color-mix(in oklch, var(--primary) 35%, transparent);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 211, 238, 0.7);
+  background: color-mix(in oklch, var(--primary) 60%, transparent);
 }
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.4) rgba(15, 23, 42, 0.5);
-}
-
-/* ============ 主题变量 ============ */
-
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-
-  /* Composer 输入框（浅色模式） */
-  --composer-border: oklch(0.6 0.15 200 / 0.5);
-  --composer-border-focus: oklch(0.55 0.15 200 / 0.8);
-  --composer-border-drag: oklch(0.55 0.15 200);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-
-  /* Composer 输入框（深色模式） */
-  --composer-border: oklch(0.8 0.15 200 / 0.8);
-  --composer-border-focus: oklch(0.85 0.15 200 / 1);
-  --composer-border-drag: oklch(0.85 0.15 200);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  html {
-    @apply font-sans;
-  }
+  scrollbar-color: color-mix(in oklch, var(--primary) 40%, transparent)
+    color-mix(in oklch, var(--muted) 60%, transparent);
 }
 
 /* ============ 代码高亮修正 ============ */
-
-/* 去掉 react-syntax-highlighter 每一行的背景 */
 pre[class*="language-"],
 code[class*="language-"] {
   background: transparent !important;
 }
 
-pre[class*="language-"]>code>span {
+pre[class*="language-"] > code > span {
   background: transparent !important;
 }
 
+/* ============ 渐变流动动画 ============ */
 @keyframes gradient-flow {
   0% {
     background-position: 0% center;
@@ -226,8 +258,108 @@ pre[class*="language-"]>code>span {
   animation: gradient-flow 3s linear infinite;
 }
 
-/* ============ 自定义变体 ============ */
+/* ============ 科技感背景（页面级） ============
+ * 浅色：清透网格 + 柔和光晕
+ * 深色：深邃网格 + 霓虹光晕
+ */
+.tech-bg {
+  position: relative;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse 80% 60% at 20% 0%,
+      color-mix(in oklch, var(--primary) 10%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 90% 100%,
+      color-mix(in oklch, oklch(0.7 0.18 300) 8%, transparent),
+      transparent 60%
+    );
+}
 
+.tech-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+        color-mix(in oklch, var(--primary) 6%, transparent) 1px,
+        transparent 1px
+      ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--primary) 6%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
+  pointer-events: none;
+}
+
+/* ============ 发光卡片 ============ */
+.glow-card {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 8px 24px -12px rgb(15 23 42 / 0.12);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.glow-card:hover {
+  border-color: color-mix(in oklch, var(--primary) 45%, var(--border));
+  box-shadow: 0 12px 32px -14px color-mix(in oklch, var(--primary) 40%, transparent);
+}
+
+/* ============ 玻璃拟态 ============ */
+.glass-panel {
+  background: color-mix(in oklch, var(--card) 72%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+}
+
+/* ============ 品牌渐变文字 ============ */
+.brand-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.62 0.18 240),
+    oklch(0.72 0.14 200),
+    oklch(0.62 0.2 300)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============ 脉冲圆点 ============ */
+@keyframes soft-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  80%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ============ 自定义变体 ============ */
 @custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
 
 @custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));

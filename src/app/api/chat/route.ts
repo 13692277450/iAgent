@@ -190,11 +190,30 @@ ${ragContext}
 
   // ==================== onFinish：token + 日志 ====================
   const onFinishHandler = async ({ text, usage, response }: any) => {
-    console.log("[TOKEN] usage:", {
-      prompt: usage?.inputTokens,
-      completion: usage?.outputTokens,
-      total: usage?.totalTokens,
-    });
+    // console.log("[TOKEN] raw usage object:", usage);
+    // console.log("[TOKEN] usage type:", typeof usage);
+    // console.log(
+    //   "[TOKEN] usage keys:",
+    //   usage ? Object.keys(usage) : "null/undefined",
+    // );
+
+    const inputTokens = usage.inputTokens ?? usage.prompt_tokens ?? 0;
+    const outputTokens = usage.outputTokens ?? usage.completion_tokens ?? 0;
+    const totalTokens = usage.totalTokens ?? usage.total_tokens ?? 0;
+
+    // console.log("[TOKEN￥￥￥￥￥￥￥] usage:", {
+    //   prompt: inputTokens,
+    //   completion: outputTokens,
+    //   total: totalTokens,
+    // });
+
+    pendingLogs("INFO", `[TOKEN prompt] inputTokens: ${inputTokens}`, "blue");
+    pendingLogs(
+      "INFO",
+      `[TOKEN completion] outputTokens: ${outputTokens}`,
+      "blue",
+    );
+    pendingLogs("INFO", `[TOKEN total] totalTokens: ${totalTokens}`, "blue");
 
     // 👇 AI 回复入队
     if (sessionId) {
@@ -316,27 +335,32 @@ ${ragContext}
         });
       };
 
-      sendLog(
-        "INFO",
-        `[TOOLS]: ${Object.keys(allTools).join(", ")} `,
-        "text-purple-400",
-      );
-      sendLog(
-        "INFO",
-        `[MCP SERVERS] : ${mcpServers?.length ?? 0}, names: ${mcpServers?.map((s) => s.name).join(", ") ?? ""}`,
-        "text-purple-400",
-      );
-      sendLog(
-        "INFO",
-        `[SKILLS] : ${skills.length ?? 0}, names: ${skills?.map((s) => s.name).join(", ") ?? ""}`,
-        "blue",
-      );
-      sendLog("INFO", `[INPUT TOKENS] : ${inputTokens ?? 0}`, "purple");
-      logs.forEach((l) => sendLog(`"RAG" [${l.level}]`, l.text, "orange"));
+      // 1. 先发 RAG 日志
+      logs.forEach((l) => sendLog(l.level, `[RAG] ${l.text}`, l.color));
 
+      // 2. 发其他日志
+      sendLog("INFO", `[TOOLS]: ${Object.keys(allTools).join(", ")}`, "purple");
+      sendLog("INFO", `[MCP SERVERS]: ${mcpServers?.length ?? 0}`, "purple");
+      sendLog("INFO", `[SKILLS]: ${skills.length ?? 0}`, "blue");
+      // sendLog("INFO", `[INPUT TOKENS]: ${inputTokens ?? 0}`, "purple");
+
+      // 3. 合并模型流
       writer.merge(toUIMessageStream({ stream: result.stream }));
+
+      // 4. 等流结束后，拿 usage，再写一条 token 日志
+      try {
+        const usage = await result.usage;
+        if (usage) {
+          sendLog(
+            "INFO",
+            `[TOKEN USAGE] Input: ${usage.inputTokens ?? 0}, Output: ${usage.outputTokens ?? 0}, Total: ${usage.totalTokens ?? 0}`,
+            "orange",
+          );
+        }
+      } catch (err) {
+        console.warn("[stream] fa`i`led to get usage:", err);
+      }
     },
   });
-
   return createUIMessageStreamResponse({ stream });
 }
