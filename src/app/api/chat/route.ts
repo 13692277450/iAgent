@@ -196,6 +196,11 @@ ${ragContext}
     //   "[TOKEN] usage keys:",
     //   usage ? Object.keys(usage) : "null/undefined",
     // );
+    console.log("[PROMPT CONTENT] system:", systemPrompt);
+    console.log(
+      "[PROMPT CONTENT] messages:",
+      JSON.stringify(messages, null, 2),
+    );
 
     const inputTokens = usage.inputTokens ?? usage.prompt_tokens ?? 0;
     const outputTokens = usage.outputTokens ?? usage.completion_tokens ?? 0;

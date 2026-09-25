@@ -18,12 +18,20 @@ import {
 export function ConversationHistory() {
   const [list, setList] = useState<any[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // 👇 删除相关 state
   const [confirmTarget, setConfirmTarget] = useState<{
     id: number;
     title: string;
   } | null>(null);
-  // 👇 新增：是否正在删除
   const [deleting, setDeleting] = useState(false);
+
+  // 👇 恢复相关 state
+  const [restoreTarget, setRestoreTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const { refreshTick, requestRestore, triggerRefresh } = useConversation();
   const { t } = useI18n();
@@ -45,6 +53,7 @@ export function ConversationHistory() {
     return () => controller.abort();
   }, [refreshTick]);
 
+  // ==================== 删除 ====================
   const handleDeleteClick = useCallback(
     (e: React.MouseEvent, id: number, title: string) => {
       e.stopPropagation();
@@ -57,7 +66,6 @@ export function ConversationHistory() {
     if (!confirmTarget) return;
     const id = confirmTarget.id;
 
-    // 👇 关闭确认框，打开加载框
     setConfirmTarget(null);
     setDeleting(true);
     setDeletingId(id);
@@ -72,11 +80,33 @@ export function ConversationHistory() {
     } catch (err) {
       console.error("[HISTORY] Conversation delete failed:", err);
     } finally {
-      // 👇 关闭加载框
       setDeleting(false);
       setDeletingId(null);
     }
   }, [confirmTarget, triggerRefresh]);
+
+  // ==================== 恢复 ====================
+  const handleRestoreClick = useCallback((id: number, title: string) => {
+    setRestoreTarget({ id, title });
+  }, []);
+
+  const handleConfirmRestore = useCallback(async () => {
+    if (!restoreTarget) return;
+    const id = restoreTarget.id;
+
+    setRestoreTarget(null);
+    setRestoring(true);
+
+    try {
+      requestRestore(id);
+      log("[HISTORY] Conversation restore requested:", id);
+    } catch (err) {
+      console.error("[HISTORY] Conversation restore failed:", err);
+    } finally {
+      // 稍等片刻，让用户看到加载动画
+      setTimeout(() => setRestoring(false), 500);
+    }
+  }, [restoreTarget, requestRestore]);
 
   const handleNewChat = () => {
     requestRestore(0);
@@ -112,10 +142,11 @@ export function ConversationHistory() {
                 key={c.id}
                 className="group flex items-center gap-1 rounded-md border border-transparent transition-colors hover:border-primary/30"
               >
+                {/* 👇 点击标题：打开恢复确认框 */}
                 <button
                   type="button"
                   title={t("sidebar.restoreTitle")}
-                  onClick={() => requestRestore(c.id)}
+                  onClick={() => handleRestoreClick(c.id, c.title)}
                   className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-primary/10"
                 >
                   <div className="truncate">{c.title}</div>
@@ -139,7 +170,7 @@ export function ConversationHistory() {
         </CardContent>
       </Card>
 
-      {/* 确认弹窗 */}
+      {/* ==================== 删除确认弹窗 ==================== */}
       <ConfirmDialog
         open={!!confirmTarget}
         onOpenChange={(v) => !v && setConfirmTarget(null)}
@@ -155,7 +186,7 @@ export function ConversationHistory() {
         onConfirm={handleConfirmDelete}
       />
 
-      {/* 👇 删除中加载弹窗 */}
+      {/* ==================== 删除加载弹窗 ==================== */}
       <Dialog open={deleting} onOpenChange={() => {}}>
         <DialogContent
           className="max-w-xs bg-slate-950 border border-cyan-400/30 text-slate-100"
@@ -172,6 +203,46 @@ export function ConversationHistory() {
             <div className="text-center">
               <p className="text-sm font-medium text-slate-100">
                 {t("⏰ Data deleting in progress, pls wait...")}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">{t("")}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==================== 恢复确认弹窗 ==================== */}
+      <ConfirmDialog
+        open={!!restoreTarget}
+        onOpenChange={(v) => !v && setRestoreTarget(null)}
+        title={t("🔄 Confirm Restore")}
+        description={
+          restoreTarget
+            ? `${t("Are you sure you want to restore?")} 「${restoreTarget.title}」`
+            : ""
+        }
+        confirmText={t("common.confirm")}
+        cancelText={t("common.cancel")}
+        destructive={false}
+        onConfirm={handleConfirmRestore}
+      />
+
+      {/* ==================== 恢复加载弹窗 ==================== */}
+      <Dialog open={restoring} onOpenChange={() => {}}>
+        <DialogContent
+          className="max-w-xs bg-slate-950 border border-cyan-400/30 text-slate-100"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle className="sr-only">
+              {t("🔄 Data Restoring...")}
+            </DialogTitle>
+            <DialogDescription className="sr-only">{t("")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center gap-4 py-6">
+            <Loader2 className="size-10 animate-spin text-cyan-400" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-slate-100">
+                {t("⏰ Data restoring in progress, pls wait...")}
               </p>
               <p className="mt-1 text-xs text-slate-400">{t("")}</p>
             </div>
