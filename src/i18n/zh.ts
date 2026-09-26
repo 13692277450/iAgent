@@ -87,6 +87,7 @@ export const zh: Dict = {
     manageMcp: "管理 MCP 服务器",
     managePrompts: "管理系统提示词",
     manageLlm: "管理 LLM",
+    manageAbout: "管理关于",
   },
   rag: {
     title: "RAG 数据",
@@ -103,7 +104,8 @@ export const zh: Dict = {
     uploadTime: "上传时间",
     action: "操作",
     noData: "暂无数据，点击“添加 RAG 数据源”进行上传。",
-    deleteConfirmSource: "确定要删除数据源“{title}”及其全部分块吗？此操作无法撤销。",
+    deleteConfirmSource:
+      "确定要删除数据源“{title}”及其全部分块吗？此操作无法撤销。",
     deleteFailed: "删除失败",
     deleteTitle: "删除",
   },
@@ -150,6 +152,13 @@ export const zh: Dict = {
   admin: {
     noData: "暂无数据",
     apiKey: "API 密钥",
+    aboutTitle: "iAgent 升级",
+    aboutVersion: "最新版本",
+    aboutBuildTime: "构建时间",
+    aboutCommitHash: "提交哈希",
+    aboutCommitMessage: "提交消息",
+    aboutCurrentVersion: "当前版本",
+    aboutUpgrade: "升级",
     baseUrl: "接口地址",
     setDefault: "设为默认提供商",
     setDefaultPrompt: "设为默认提示词",

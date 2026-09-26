@@ -4,6 +4,9 @@
 
 ![alt text](image-12.png)
 
+Custom prompt to compress token usage to limit.
+
+![alt text](image-13.png)
 
 ---
 
@@ -83,9 +86,6 @@ iAgent is a powerful AI assistant integration platform designed for centralized 
 ## 📁 Project Structure
 src/ ├── app/ # Next.js App Router pages & API routes │ ├── api/ # Backend API endpoints │ │ ├── admin/ # Admin management APIs │ │ ├── chat/ # Chat completion API │ │ ├── conversation/ # Conversation history CRUD │ │ ├── mcp/ # MCP server APIs │ │ ├── rag/ # RAG document upload/query │ │ └── skills/ # Skills management │ ├── chat/ # Frontend chat interface │ └── login/ # Authentication page ├── components/ # Reusable React components │ ├── ai-elements/ # Core AI chat components │ ├── assistant-ui/ # Custom Assistant UI elements │ ├── ui/ # Base UI components (shadcn) │ └── admin/ # Admin panel components ├── lib/ # Business logic & utilities │ ├── rag.ts # RAG retrieval logic │ ├── mcp_servers.ts # MCP server management │ ├── skill_handler.ts # Skill execution engine │ ├── embedding.ts # Text embedding service │ └── auth.ts # Authentication utilities ├── db/ # Database schema (Drizzle ORM) └── i18n/ # Internationalization files
 
-text
-
-
 
 
 ## 🚀 Getting Started
@@ -102,19 +102,10 @@ text
 ```bash
 git clone <repository-url> cd iagent</repository-url>
 
-text
-
-
-
 
 2. **Install dependencies**
 ```bash
 npm install
-
-text
-
-
-
 
 3. **Configure environment variables**
 
@@ -130,30 +121,15 @@ OPENAI_API_KEY=your-openai-api-key DEEPSEEK_API_KEY=your-deepseek-api-key
 App
 NEXTAUTH_SECRET=your-secret-key
 
-text
-
-
-
-
 4. **Set up the database**
 
 Run database migrations:
 ```bash
 npm run db:push # or use Drizzle migration commands
 
-text
-
-
-
-
 5. **Start development server**
 ```bash
 npm run dev
-
-text
-
-
-
 
 6. **Open in browser**
 
@@ -332,19 +308,9 @@ text
 ```bash
 git clone <仓库地址> cd iagent
 
-text
-
-
-
-
 2. **安装依赖**
 ```bash
 npm install
-
-text
-
-
-
 
 3. **配置环境变量**
 
@@ -360,30 +326,15 @@ OPENAI_API_KEY=your-openai-api-key DEEPSEEK_API_KEY=your-deepseek-api-key
 应用密钥
 NEXTAUTH_SECRET=your-secret-key
 
-text
-
-
-
-
 4. **初始化数据库**
 
 运行数据库迁移：
 ```bash
 npm run db:push # 或使用 Drizzle 迁移命令
 
-text
-
-
-
-
 5. **启动开发服务器**
 ```bash
 npm run dev
-
-text
-
-
-
 
 6. **浏览器访问**
 

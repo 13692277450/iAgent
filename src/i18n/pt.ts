@@ -87,6 +87,7 @@ export const pt: Dict = {
     manageMcp: "Gerir servidores MCP",
     managePrompts: "Gerir prompts do sistema",
     manageLlm: "Gerir LLM",
+    manageAbout: "Gerir informações",
   },
   rag: {
     title: "DADOS RAG",
@@ -102,8 +103,10 @@ export const pt: Dict = {
     chunkCount: "Nº DE FRAGMENTOS",
     uploadTime: "DATA DE CARREGAMENTO",
     action: "AÇÃO",
-    noData: "Sem dados disponíveis, clique em «Adicionar fontes RAG» para carregar.",
-    deleteConfirmSource: "Tem a certeza de que deseja eliminar a fonte «{title}» e todos os fragmentos? Esta operação não pode ser anulada.",
+    noData:
+      "Sem dados disponíveis, clique em «Adicionar fontes RAG» para carregar.",
+    deleteConfirmSource:
+      "Tem a certeza de que deseja eliminar a fonte «{title}» e todos os fragmentos? Esta operação não pode ser anulada.",
     deleteFailed: "FALHA NA ELIMINAÇÃO",
     deleteTitle: "ELIMINAR",
   },
@@ -151,6 +154,13 @@ export const pt: Dict = {
   admin: {
     noData: "Sem dados disponíveis",
     apiKey: "Chave API",
+    aboutTitle: "iAgent Upgrade",
+    aboutVersion: "Nova versão nova",
+    aboutBuildTime: "Tempo de construção",
+    aboutCommitHash: "Hash de commit",
+    aboutCommitMessage: "Mensagem de commit",
+    aboutCurrentVersion: "Versão atual",
+    aboutUpgrade: "Atualizar",
     baseUrl: "URL base",
     setDefault: "Definir como fornecedor predefinido",
     setDefaultPrompt: "Definir como prompt predefinido",

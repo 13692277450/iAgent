@@ -99,6 +99,7 @@ export const en = {
     manageMcp: "Manage MCP Servers",
     managePrompts: "Manage System Prompt",
     manageLlm: "Manage LLM",
+    manageAbout: "Manage About",
   },
   rag: {
     title: "RAG DATA",
@@ -114,8 +115,9 @@ export const en = {
     chunkCount: "CHUNK COUNT",
     uploadTime: "UPLOAD TIME",
     action: "ACTION",
-    noData: "No data available, click \"Add RAG sources\" to upload.",
-    deleteConfirmSource: "Are you sure you want to delete source \"{title}\" and all chunks? This operation cannot be undone.",
+    noData: 'No data available, click "Add RAG sources" to upload.',
+    deleteConfirmSource:
+      'Are you sure you want to delete source "{title}" and all chunks? This operation cannot be undone.',
     deleteFailed: "DELETE FAILED",
     deleteTitle: "DELETE",
   },
@@ -163,6 +165,13 @@ export const en = {
   admin: {
     noData: "No data available",
     apiKey: "API Key",
+    aboutTitle: "iAgent Upgrade",
+    aboutVersion: "New Version",
+    aboutBuildTime: "Build Time",
+    aboutCommitHash: "Commit Hash",
+    aboutCommitMessage: "Commit Message",
+    aboutCurrentVersion: "Current Version",
+    aboutUpgrade: "Upgrade",
     baseUrl: "Base URL",
     setDefault: "Set as Default Provider",
     setDefaultPrompt: "Set as Default Prompt",
@@ -254,7 +263,8 @@ export const en = {
     promptsContent: "Prompt Content",
     promptsEdit: "Edit Prompt",
     promptsCreate: "New Prompt",
-    promptsEmpty: "No system prompts configured. Click NEW PROMPT to create one.",
+    promptsEmpty:
+      "No system prompts configured. Click NEW PROMPT to create one.",
     promptsEmptyList: "No Prompts Defined",
     promptsDeleteConfirm: "Delete this System Prompt?",
   },

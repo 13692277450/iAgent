@@ -87,6 +87,7 @@ export const no: Dict = {
     manageMcp: "Administrer MCP-tjenere",
     managePrompts: "Administrer systemprompt",
     manageLlm: "Administrer LLM",
+    manageAbout: "Administrer om",
   },
   rag: {
     title: "RAG-DATA",
@@ -102,8 +103,10 @@ export const no: Dict = {
     chunkCount: "ANTALL CHUNKS",
     uploadTime: "OPPLASTINGSTID",
     action: "HANDLING",
-    noData: "Ingen data tilgjengelig, klikk \"Legg til RAG-kilder\" for å laste opp.",
-    deleteConfirmSource: "Er du sikker på at du vil slette kilden \"{title}\" og alle chunks? Dette kan ikke angres.",
+    noData:
+      'Ingen data tilgjengelig, klikk "Legg til RAG-kilder" for å laste opp.',
+    deleteConfirmSource:
+      'Er du sikker på at du vil slette kilden "{title}" og alle chunks? Dette kan ikke angres.',
     deleteFailed: "SLETTING MISLYKTES",
     deleteTitle: "SLETT",
   },
@@ -151,6 +154,13 @@ export const no: Dict = {
   admin: {
     noData: "Ingen data tilgjengelig",
     apiKey: "API-nøkkel",
+    aboutTitle: "iAgent Oppdatering",
+    aboutVersion: "Ny versjon",
+    aboutBuildTime: "Bouwijd",
+    aboutCommitHash: "Commit-hash",
+    aboutCommitMessage: "Commitbericht",
+    aboutCurrentVersion: "Huidige versjon",
+    aboutUpgrade: "Oppdater",
     baseUrl: "Base-URL",
     setDefault: "Angi som standardleverandør",
     setDefaultPrompt: "Angi som standardprompt",

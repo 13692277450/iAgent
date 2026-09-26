@@ -87,6 +87,7 @@ export const nl: Dict = {
     manageMcp: "MCP-servers beheren",
     managePrompts: "Systeemprompts beheren",
     manageLlm: "LLM beheren",
+    manageAbout: "Over be beheren",
   },
   rag: {
     title: "RAG-GEGEVENS",
@@ -102,8 +103,10 @@ export const nl: Dict = {
     chunkCount: "AANTAL CHUNKS",
     uploadTime: "UPLOADTIJD",
     action: "ACTIE",
-    noData: "Geen gegevens beschikbaar, klik op \"RAG-bronnen toevoegen\" om te uploaden.",
-    deleteConfirmSource: "Weet u zeker dat u de bron \"{title}\" en alle chunks wilt verwijderen? Deze bewerking kan niet ongedaan worden gemaakt.",
+    noData:
+      'Geen gegevens beschikbaar, klik op "RAG-bronnen toevoegen" om te uploaden.',
+    deleteConfirmSource:
+      'Weet u zeker dat u de bron "{title}" en alle chunks wilt verwijderen? Deze bewerking kan niet ongedaan worden gemaakt.',
     deleteFailed: "VERWIJDEREN MISLUKT",
     deleteTitle: "VERWIJDEREN",
   },
@@ -151,6 +154,13 @@ export const nl: Dict = {
   admin: {
     noData: "Geen gegevens beschikbaar",
     apiKey: "API-sleutel",
+    aboutTitle: "iAgent Upgrade",
+    aboutVersion: "Nieuwe versie",
+    aboutBuildTime: "Bouwijd",
+    aboutCommitHash: "Commit-hash",
+    aboutCommitMessage: "Commitbericht",
+    aboutCurrentVersion: "Huidige versie",
+    aboutUpgrade: "Upgrade",
     baseUrl: "Basis-URL",
     setDefault: "Instellen als standaardprovider",
     setDefaultPrompt: "Instellen als standaardprompt",

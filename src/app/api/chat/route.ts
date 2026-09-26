@@ -196,9 +196,9 @@ ${ragContext}
     //   "[TOKEN] usage keys:",
     //   usage ? Object.keys(usage) : "null/undefined",
     // );
-    console.log("[PROMPT CONTENT] system:", systemPrompt);
+    console.log("\x1b[35m[PROMPT CONTENT]\x1b[0m → system:", systemPrompt);
     console.log(
-      "[PROMPT CONTENT] messages:",
+      "\x1b[35m[PROMPT CONTENT]\x1b[0m → messages:",
       JSON.stringify(messages, null, 2),
     );
 
@@ -215,7 +215,7 @@ ${ragContext}
     pendingLogs("INFO", `[TOKEN prompt] inputTokens: ${inputTokens}`, "blue");
     pendingLogs(
       "INFO",
-      `[TOKEN completion] outputTokens: ${outputTokens}`,
+      ` \x1b[35m[TOKEN completion]\x1b[0m →outputTokens: ${outputTokens}`,
       "blue",
     );
     pendingLogs("INFO", `[TOKEN total] totalTokens: ${totalTokens}`, "blue");

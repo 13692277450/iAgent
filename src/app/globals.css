@@ -68,6 +68,7 @@
     }
   }
 }
+
 /* ============ 主题变量 ============
  * 清新科技风：浅色 = 清透冷白 + 青蓝点缀
  * 深色   = 深邃午夜蓝 + 霓虹青发光
@@ -149,8 +150,8 @@
 
   --destructive: oklch(0.704 0.191 22.216);
 
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 18%);
+  --border: oklch(85.669% 0.20513 141.662 / 0.52);
+  --input: oklch(1 0 0 / 48%);
   --ring: oklch(0.75 0.13 205);
 
   --chart-1: oklch(0.75 0.15 205);
@@ -169,12 +170,13 @@
   --sidebar-ring: oklch(0.75 0.13 205);
 
   /* Composer 输入框（深色模式） */
-  --composer-border: oklch(0.75 0.13 205 / 0.8);
-  --composer-border-focus: oklch(0.82 0.13 205 / 1);
+  --composer-border: oklch(1.8 0.13 205 / 1.1);
+  --composer-border-focus: oklch(1.4 0.13 205 / 1);
   --composer-border-drag: oklch(0.82 0.13 205);
 
   color-scheme: dark;
 }
+
 /* ============ 基础 ============ */
 @layer base {
   * {
@@ -229,8 +231,7 @@
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--primary) 40%, transparent)
-    color-mix(in oklch, var(--muted) 60%, transparent);
+  scrollbar-color: color-mix(in oklch, var(--primary) 40%, transparent) color-mix(in oklch, var(--muted) 60%, transparent);
 }
 
 /* ============ 代码高亮修正 ============ */
@@ -239,7 +240,7 @@ code[class*="language-"] {
   background: transparent !important;
 }
 
-pre[class*="language-"] > code > span {
+pre[class*="language-"]>code>span {
   background: transparent !important;
 }
 
@@ -266,16 +267,12 @@ pre[class*="language-"] > code > span {
   position: relative;
   background-color: var(--background);
   background-image:
-    radial-gradient(
-      ellipse 80% 60% at 20% 0%,
+    radial-gradient(ellipse 80% 60% at 20% 0%,
       color-mix(in oklch, var(--primary) 10%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse 70% 55% at 90% 100%,
+      transparent 60%),
+    radial-gradient(ellipse 70% 55% at 90% 100%,
       color-mix(in oklch, oklch(0.7 0.18 300) 8%, transparent),
-      transparent 60%
-    );
+      transparent 60%);
 }
 
 .tech-bg::before {
@@ -283,15 +280,11 @@ pre[class*="language-"] > code > span {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(
-        color-mix(in oklch, var(--primary) 6%, transparent) 1px,
-        transparent 1px
-      ),
-    linear-gradient(
-      90deg,
+    linear-gradient(color-mix(in oklch, var(--primary) 6%, transparent) 1px,
+      transparent 1px),
+    linear-gradient(90deg,
       color-mix(in oklch, var(--primary) 6%, transparent) 1px,
-      transparent 1px
-    );
+      transparent 1px);
   background-size: 44px 44px;
   -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
   mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
@@ -326,12 +319,10 @@ pre[class*="language-"] > code > span {
 
 /* ============ 品牌渐变文字 ============ */
 .brand-text {
-  background: linear-gradient(
-    90deg,
-    oklch(0.62 0.18 240),
-    oklch(0.72 0.14 200),
-    oklch(0.62 0.2 300)
-  );
+  background: linear-gradient(90deg,
+      oklch(0.62 0.18 240),
+      oklch(0.72 0.14 200),
+      oklch(0.62 0.2 300));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -343,6 +334,7 @@ pre[class*="language-"] > code > span {
     transform: scale(1);
     opacity: 0.9;
   }
+
   80%,
   100% {
     transform: scale(2.4);

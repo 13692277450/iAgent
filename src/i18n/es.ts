@@ -87,6 +87,7 @@ export const es: Dict = {
     manageMcp: "Gestionar servidores MCP",
     managePrompts: "Gestionar prompts del sistema",
     manageLlm: "Gestionar LLM",
+    manageAbout: "Gestionar acerca de",
   },
   rag: {
     title: "DATOS RAG",
@@ -102,8 +103,10 @@ export const es: Dict = {
     chunkCount: "Nº DE FRAGMENTOS",
     uploadTime: "FECHA DE SUBIDA",
     action: "ACCIÓN",
-    noData: "No hay datos disponibles, haga clic en «Añadir fuentes RAG» para subir.",
-    deleteConfirmSource: "¿Seguro que desea eliminar la fuente «{title}» y todos sus fragmentos? Esta operación no se puede deshacer.",
+    noData:
+      "No hay datos disponibles, haga clic en «Añadir fuentes RAG» para subir.",
+    deleteConfirmSource:
+      "¿Seguro que desea eliminar la fuente «{title}» y todos sus fragmentos? Esta operación no se puede deshacer.",
     deleteFailed: "FALLO AL ELIMINAR",
     deleteTitle: "ELIMINAR",
   },
@@ -151,6 +154,13 @@ export const es: Dict = {
   admin: {
     noData: "No hay datos disponibles",
     apiKey: "Clave API",
+    aboutTitle: "Actualización",
+    aboutVersion: "Versión nueva",
+    aboutBuildTime: "Tiempo de construcción",
+    aboutCommitHash: "Hash de commit",
+    aboutCommitMessage: "Mensaje de commit",
+    aboutUpgrade: "Actualizar",
+    aboutCurrentVersion: "Versión actual",
     baseUrl: "URL base",
     setDefault: "Establecer como proveedor predeterminado",
     setDefaultPrompt: "Establecer como prompt predeterminado",
