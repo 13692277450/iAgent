@@ -1,0 +1,175 @@
+{
+  "name": "create_presentation",
+  "displayName": "创建精美 PPT",
+  "description": "根据结构化参数生成一份精美的 PowerPoint 演示文稿（.pptx）。支持封面、目录、章节过渡、图文、图表、表格、引用、时间线、对比、结束等多种版式。",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "meta": {
+        "type": "object",
+        "description": "演示文稿的全局元信息",
+        "properties": {
+          "title": { "type": "string", "description": "PPT 标题" },
+          "subtitle": { "type": "string", "description": "副标题" },
+          "author": { "type": "string", "description": "作者/公司名" },
+          "date": { "type": "string", "description": "日期，如 2026-09" },
+          "fileName": {
+            "type": "string",
+            "description": "输出文件名（不含扩展名）"
+          }
+        },
+        "required": ["title"]
+      },
+      "theme": {
+        "type": "object",
+        "description": "全局视觉主题",
+        "properties": {
+          "primaryColor": { "type": "string", "default": "#F97316" },
+          "secondaryColor": { "type": "string", "default": "#06B6D4" },
+          "backgroundColor": { "type": "string", "default": "#FFFFFF" },
+          "textColor": { "type": "string", "default": "#1F2937" },
+          "fontFamily": { "type": "string", "default": "Microsoft YaHei" },
+          "style": {
+            "type": "string",
+            "enum": ["minimal", "corporate", "creative", "tech", "academic"],
+            "default": "corporate"
+          }
+        }
+      },
+      "slides": {
+        "type": "array",
+        "description": "每一页的内容定义",
+        "items": {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "string",
+              "enum": [
+                "cover",
+                "toc",
+                "section",
+                "title-content",
+                "two-column",
+                "three-column",
+                "image-text",
+                "chart",
+                "table",
+                "quote",
+                "timeline",
+                "comparison",
+                "end"
+              ]
+            },
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" },
+            "bullets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": { "type": "string" },
+                  "level": { "type": "number" }
+                },
+                "required": ["text"]
+              }
+            },
+            "paragraphs": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "heading": { "type": "string" },
+                  "body": { "type": "string" },
+                  "bullets": { "type": "array", "items": { "type": "string" } },
+                  "color": { "type": "string" }
+                }
+              }
+            },
+            "chart": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["bar", "line", "pie", "doughnut", "area", "radar"]
+                },
+                "labels": { "type": "array", "items": { "type": "string" } },
+                "datasets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": { "type": "string" },
+                      "data": {
+                        "type": "array",
+                        "items": { "type": "number" }
+                      },
+                      "color": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "table": {
+              "type": "object",
+              "properties": {
+                "headers": { "type": "array", "items": { "type": "string" } },
+                "rows": {
+                  "type": "array",
+                  "items": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "timeline": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": { "type": "string" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            },
+            "quote": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" },
+                "author": { "type": "string" }
+              }
+            },
+            "notes": { "type": "string" }
+          },
+          "required": ["layout"]
+        }
+      }
+    },
+    "required": ["meta", "slides"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "success": { "type": "boolean" },
+      "filePath": { "type": "string" },
+      "fileName": { "type": "string" },
+      "slideCount": { "type": "number" },
+      "fileSize": { "type": "number" },
+      "error": { "type": "string" }
+    }
+  },
+  "handler_type": "function",
+  "endpoint": null,
+  "handler_ref": "create_presentation",
+  "auth_type": "none",
+  "auth_config": null,
+  "metadata": {
+    "tags": ["document", "ppt", "office"],
+    "version": "1.0.0",
+    "category": "document"
+  },
+  "enabled": true,
+  "is_default": false
+}

@@ -1,0 +1,27 @@
+{
+  "type": "function",
+  "function": {
+    "name": "text_summarize",
+    "description": "对长文本进行摘要，支持指定摘要长度和语言。",
+    "parameters": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "待摘要的原文"
+        },
+        "maxLength": {
+          "type": "number",
+          "description": "摘要最大字数",
+          "default": 200
+        },
+        "language": {
+          "type": "string",
+          "enum": ["zh", "en"],
+          "default": "zh"
+        }
+      }
+    }
+  }
+}

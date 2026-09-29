@@ -1,0 +1,99 @@
+[
+  {
+    "name": "excel_export",
+    "displayName": "导出 Excel",
+    "description": "把结构化数据导出为 .xlsx 文件，支持多 sheet、表头样式、列宽自适应。",
+    "inputSchema": {
+      "type": "object",
+      "required": ["sheets"],
+      "properties": {
+        "fileName": { "type": "string", "description": "输出文件名" },
+        "sheets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "headers": { "type": "array", "items": { "type": "string" } },
+              "rows": {
+                "type": "array",
+                "items": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "success": { "type": "boolean" },
+        "filePath": { "type": "string" }
+      }
+    },
+    "handler_type": "function",
+    "handler_ref": "excel_export",
+    "auth_type": "none",
+    "metadata": {
+      "tags": ["document", "excel", "office"],
+      "version": "1.0.0"
+    },
+    "enabled": true
+  },
+  {
+    "name": "pdf_merge",
+    "displayName": "合并 PDF",
+    "description": "把多个 PDF 文件按顺序合并为一个 PDF。",
+    "inputSchema": {
+      "type": "object",
+      "required": ["files"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDF 文件路径列表"
+        },
+        "outputName": { "type": "string", "default": "merged.pdf" }
+      }
+    },
+    "handler_type": "function",
+    "handler_ref": "pdf_merge",
+    "auth_type": "none",
+    "metadata": {
+      "tags": ["document", "pdf"],
+      "version": "1.0.0"
+    },
+    "enabled": true
+  },
+  {
+    "name": "markdown_to_html",
+    "displayName": "Markdown 转 HTML",
+    "description": "把 Markdown 文本转换为 HTML，支持 GFM 语法、代码高亮。",
+    "inputSchema": {
+      "type": "object",
+      "required": ["markdown"],
+      "properties": {
+        "markdown": { "type": "string" },
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark"],
+          "default": "light"
+        }
+      }
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "html": { "type": "string" }
+      }
+    },
+    "handler_type": "function",
+    "handler_ref": "markdown_to_html",
+    "auth_type": "none",
+    "metadata": {
+      "tags": ["document", "markdown", "html"],
+      "version": "1.0.0"
+    },
+    "enabled": true
+  }
+]

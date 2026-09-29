@@ -1,6 +1,7 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AdminDialogShell } from "./admin/adminDialogShell";
 import { AdminTable } from "./admin/adminTable";
 import { AdminFormField } from "./admin/adminFormField";
@@ -21,6 +22,10 @@ import {
   Code2,
   ToggleLeft,
   Star,
+  Upload,
+  X,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { log } from "@/lib/logger";
 import { useI18n } from "@/components/i18n-provider";
@@ -30,7 +35,6 @@ import { cn } from "@/lib/utils";
 // 🎨 增强版玻璃态 + 科技网格样式系统
 // ==========================================
 const ENHANCED_STYLES = `
-  /* --- 动态背景网格 --- */
   .skill-dialog-bg {
     background-image:
       linear-gradient(rgba(6,182,212,0.03) 1px, transparent 1px),
@@ -51,8 +55,6 @@ const ENHANCED_STYLES = `
     0% { background-position: 0% 0%; }
     100% { background-position: 0% 200%; }
   }
-
-  /* --- 表单玻璃卡片 --- */
   .skill-glass-form .glass-field-wrapper {
     @apply p-4 rounded-xl bg-muted/40 border border-border transition-all duration-300 relative overflow-hidden;
   }
@@ -69,8 +71,6 @@ const ENHANCED_STYLES = `
   .skill-glass-form .glass-field-wrapper:hover::after {
     opacity: 1;
   }
-
-  /* --- 输入框覆盖 --- */
   .skill-glass-form input,
   .skill-glass-form textarea,
   .skill-glass-form select {
@@ -84,33 +84,12 @@ const ENHANCED_STYLES = `
   .skill-glass-form label {
     @apply !text-xs !font-semibold !uppercase !tracking-widest !text-muted-foreground !mb-2 !flex !items-center !gap-2;
   }
-
-  /* --- Save 按钮脉冲光晕 --- */
   @keyframes btn-pulse {
     0%, 100% { box-shadow: 0 0 20px rgba(6,182,212,0.3); }
     50% { box-shadow: 0 0 30px rgba(6,182,212,0.5); }
   }
   .btn-save-glow:not(:disabled) {
     animation: btn-pulse 2s ease-in-out infinite;
-  }
-
-  /* --- 表格行左侧状态条 --- */
-  .skill-table-row {
-    position: relative;
-  }
-  .skill-table-row::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: transparent;
-    transition: background 0.2s;
-  }
-  .skill-table-row:hover::before {
-    background: rgb(6,182,212);
-    box-shadow: 0 0 8px rgba(6,182,212,0.5);
   }
 `;
 
@@ -142,45 +121,6 @@ const EMPTY: Skill = {
   is_default: false,
 };
 
-// 表单字段配置：label + 图标映射
-const FORM_FIELDS = {
-  name: {
-    label: "Skill Identifier",
-    icon: Hash,
-    placeholder: "e.g. web_search_v2",
-  },
-  display_name: {
-    label: "Display Name",
-    icon: Type,
-    placeholder: "Human readable name",
-  },
-  description: {
-    label: "Description",
-    icon: FileText,
-    placeholder: "Describe what this skill does...",
-  },
-  handler_type: {
-    label: "Handler Type",
-    icon: ToggleLeft,
-    placeholder: "http / function / mcp",
-  },
-  endpoint: {
-    label: "Endpoint URL",
-    icon: Globe,
-    placeholder: "https://api.example.com/v1/...",
-  },
-  handler_ref: {
-    label: "Handler Reference",
-    icon: Link,
-    placeholder: "Module path or function name",
-  },
-  input_schema: {
-    label: "Input Schema (JSON)",
-    icon: Code2,
-    placeholder: '{ "type": "object", ... }',
-  },
-} as const;
-
 export function ManageSkillsDialog({
   open,
   onOpenChange,
@@ -188,11 +128,30 @@ export function ManageSkillsDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [list, setList] = useState<Skill[]>([]);
   const { t } = useI18n();
+  const [list, setList] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Skill | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // 导入相关状态
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({
+    current: 0,
+    total: 0,
+  });
+  const [importResult, setImportResult] = useState<{
+    total: number;
+    successCount: number;
+    failCount: number;
+    results: Array<{
+      name: string;
+      success: boolean;
+      error?: string;
+      action?: string;
+    }>;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -244,6 +203,77 @@ export function ManageSkillsDialog({
     await load();
   };
 
+  // ---------- 导入处理 ----------
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFilesSelected = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    setImporting(true);
+    setImportProgress({ current: 0, total: files.length });
+
+    const allSkills: any[] = [];
+    const parseErrors: Array<{
+      name: string;
+      success: boolean;
+      error: string;
+    }> = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+        allSkills.push(...list);
+      } catch (err: any) {
+        parseErrors.push({
+          name: file.name,
+          success: false,
+          error: `JSON 解析失败：${err.message}`,
+        });
+      }
+      setImportProgress({ current: i + 1, total: files.length });
+    }
+
+    let backendResult: any = { results: [] };
+    if (allSkills.length > 0) {
+      try {
+        const res = await fetch("/api/admin/skills/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ skills: allSkills }),
+        });
+        backendResult = await res.json();
+      } catch (err: any) {
+        parseErrors.push({
+          name: "批量导入请求",
+          success: false,
+          error: err.message,
+        });
+      }
+    }
+
+    const allResults = [...(backendResult.results ?? []), ...parseErrors];
+
+    setImportResult({
+      total: allResults.length,
+      successCount: allResults.filter((r) => r.success).length,
+      failCount: allResults.filter((r) => !r.success).length,
+      results: allResults,
+    });
+
+    setImporting(false);
+    await load();
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <>
       <style>{ENHANCED_STYLES}</style>
@@ -253,7 +283,7 @@ export function ManageSkillsDialog({
         onOpenChange={onOpenChange}
         title={t("admin.skillsTitle")}
         toolbar={
-          <div className="flex items-center justify-between w-full gap-4 ">
+          <div className="flex items-center justify-between w-full gap-4">
             {!editing && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-wider">
                 <div className="p-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
@@ -264,31 +294,56 @@ export function ManageSkillsDialog({
             )}
 
             {!editing && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  setEditing({
-                    ...EMPTY,
-                    input_schema: JSON.stringify(EMPTY.input_schema, null, 2),
-                  })
-                }
-                className={cn(
-                  "h-9 px-4 text-xs font-medium tracking-wide ml-auto",
-                  "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30",
-                  "hover:bg-cyan-500/20 hover:text-cyan-200 hover:border-cyan-400/50",
-                  "shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all duration-300",
-                )}
-              >
-                <Plus className="w-4 h-4 mr-2" /> {t("admin.skillsNew")}
-              </Button>
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleImportClick}
+                  disabled={importing}
+                  className={cn(
+                    "h-9 px-4 text-xs font-medium tracking-wide",
+                    "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
+                    "hover:bg-emerald-500/20 hover:text-emerald-200 hover:border-emerald-400/50",
+                    "shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all duration-300",
+                  )}
+                >
+                  <Upload className="w-4 h-4 mr-2" /> 导入 Skill
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setEditing({
+                      ...EMPTY,
+                      input_schema: JSON.stringify(EMPTY.input_schema, null, 2),
+                    })
+                  }
+                  className={cn(
+                    "h-9 px-4 text-xs font-medium tracking-wide",
+                    "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30",
+                    "hover:bg-cyan-500/20 hover:text-cyan-200 hover:border-cyan-400/50",
+                    "shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all duration-300",
+                  )}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> {t("admin.skillsNew")}
+                </Button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  multiple
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+              </div>
             )}
           </div>
         }
       >
         {/* 动态网格背景 + 扫描线 */}
-        <div className="skill-dialog-bg absolute inset-0 pointer-events-none z-0 " />
-        {/* 装饰光斑 */}
+        <div className="skill-dialog-bg absolute inset-0 pointer-events-none z-0" />
         <div className="absolute -top-32 -right-32 w-80 h-80 bg-cyan-500/8 rounded-full blur-[100px] pointer-events-none z-0" />
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/8 rounded-full blur-[100px] pointer-events-none z-0" />
 
@@ -307,7 +362,6 @@ export function ManageSkillsDialog({
               rows={list.map((s, idx) => ({
                 id: s.id!,
                 cells: [
-                  // Name + 行号 + 脉冲点
                   <span
                     key="n"
                     className="font-mono text-sm text-cyan-600 dark:text-cyan-300 flex items-center gap-2.5"
@@ -359,7 +413,6 @@ export function ManageSkillsDialog({
               onDelete={remove}
             />
 
-            {/* 增强版空状态 */}
             {!loading && list.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 pointer-events-none">
                 <div className="w-16 h-16 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-center mb-4">
@@ -373,7 +426,6 @@ export function ManageSkillsDialog({
           </div>
         ) : (
           <div className="skill-glass-form relative z-10 space-y-5 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* 返回导航 + 面包屑 */}
             <div className="flex items-center justify-between mb-2">
               <button
                 type="button"
@@ -397,7 +449,6 @@ export function ManageSkillsDialog({
               </div>
             </div>
 
-            {/* 基础信息组 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass-field-wrapper">
                 <AdminFormField
@@ -425,9 +476,7 @@ export function ManageSkillsDialog({
               />
             </div>
 
-            {/* 执行配置组 */}
             <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4 relative overflow-hidden">
-              {/* 分组顶部光线 */}
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
 
               <h3 className="text-xs font-semibold text-cyan-600 dark:text-cyan-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -462,7 +511,6 @@ export function ManageSkillsDialog({
               </div>
             </div>
 
-            {/* Schema 编辑器 */}
             <div className="glass-field-wrapper">
               <AdminFormField
                 label={t("admin.skillsSchema")}
@@ -477,11 +525,14 @@ export function ManageSkillsDialog({
               />
             </div>
 
-            {/* 开关 & 操作栏 */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border">
               <div className="flex gap-6">
                 {[
-                  { key: "enabled", label: t("admin.enabledLabel"), icon: Zap },
+                  {
+                    key: "enabled",
+                    label: t("admin.enabledLabel"),
+                    icon: Zap,
+                  },
                   {
                     key: "is_default",
                     label: t("admin.setAsDefault"),
@@ -551,268 +602,135 @@ export function ManageSkillsDialog({
             </div>
           </div>
         )}
+
+        {/* ============ 导入进度弹窗 ============ */}
+        {importing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-[420px] rounded-2xl bg-card border border-border p-6 shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  正在导入 Skill
+                </h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>读取文件</span>
+                  <span>
+                    {importProgress.current} / {importProgress.total}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300"
+                    style={{
+                      width: `${
+                        importProgress.total > 0
+                          ? (importProgress.current / importProgress.total) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============ 导入结果弹窗 ============ */}
+        {importResult && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-[560px] max-h-[80vh] rounded-2xl bg-card border border-border shadow-2xl flex flex-col">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground">
+                  导入结果
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setImportResult(null)}
+                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="px-6 py-4 flex gap-6 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm text-foreground">
+                    成功{" "}
+                    <strong className="text-emerald-400">
+                      {importResult.successCount}
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400" />
+                  <span className="text-sm text-foreground">
+                    失败{" "}
+                    <strong className="text-rose-400">
+                      {importResult.failCount}
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    共 {importResult.total} 条
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 py-3">
+                <ul className="space-y-2">
+                  {importResult.results.map((r, i) => (
+                    <li
+                      key={i}
+                      className={cn(
+                        "flex items-start gap-2 text-xs rounded-lg px-3 py-2 border",
+                        r.success
+                          ? "bg-emerald-500/5 border-emerald-500/20"
+                          : "bg-rose-500/5 border-rose-500/20",
+                      )}
+                    >
+                      {r.success ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-foreground truncate">
+                          {r.name}
+                        </div>
+                        {r.success && r.action && (
+                          <div className="text-muted-foreground mt-0.5">
+                            {r.action === "created" ? "已新建" : "已更新"}
+                          </div>
+                        )}
+                        {!r.success && r.error && (
+                          <div className="text-rose-400 mt-0.5 break-words">
+                            {r.error}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="px-6 py-4 border-t border-border flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => setImportResult(null)}
+                  className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white border-0"
+                >
+                  关闭
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </AdminDialogShell>
     </>
   );
 }
-
-//before UI optimize
-
-// "use client";
-
-// import { useEffect, useState, useCallback } from "react";
-// import { AdminDialogShell } from "./admin/adminDialogShell";
-// import { AdminTable } from "./admin/adminTable";
-// import { AdminFormField } from "./admin/adminFormField";
-// import { Button } from "@/components/ui/button";
-// import { Plus, Save, ArrowLeft } from "lucide-react";
-// import { log } from "@/lib/logger";
-
-// type Skill = {
-//   id?: number;
-//   name: string;
-//   display_name: string;
-//   description: string;
-//   input_schema: any;
-//   output_schema?: any;
-//   handler_type: string;
-//   endpoint: string;
-//   handler_ref: string;
-//   auth_type: string;
-//   enabled: boolean;
-//   is_default: boolean;
-// };
-
-// const EMPTY: Skill = {
-//   name: "",
-//   display_name: "",
-//   description: "",
-//   input_schema: { type: "object", properties: {} },
-//   handler_type: "http",
-//   endpoint: "",
-//   handler_ref: "",
-//   auth_type: "none",
-//   enabled: true,
-//   is_default: false,
-// };
-
-// export function ManageSkillsDialog({
-//   open,
-//   onOpenChange,
-// }: {
-//   open: boolean;
-//   onOpenChange: (v: boolean) => void;
-// }) {
-//   const [list, setList] = useState<Skill[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [editing, setEditing] = useState<Skill | null>(null);
-//   const [saving, setSaving] = useState(false);
-
-//   const load = useCallback(async () => {
-//     setLoading(true);
-//     try {
-//       const res = await fetch("/api/admin/skills");
-//       const data = await res.json();
-//       setList(data.skills ?? []);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     if (open) load();
-//   }, [open, load]);
-
-//   const save = async () => {
-//     if (!editing) return;
-//     setSaving(true);
-//     try {
-//       const url = editing.id
-//         ? `/api/admin/skills/${editing.id}`
-//         : "/api/admin/skills";
-//       const method = editing.id ? "PUT" : "POST";
-//       const res = await fetch(url, {
-//         method,
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           ...editing,
-//           input_schema:
-//             typeof editing.input_schema === "string"
-//               ? JSON.parse(editing.input_schema)
-//               : editing.input_schema,
-//         }),
-//       });
-//       if (!res.ok) throw new Error(await res.text());
-//       await load();
-//       setEditing(null);
-//     } catch (err) {
-//       log("[Skills] save failed:", err);
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
-
-//   const remove = async (id: number) => {
-//     if (!confirm("Are you sure to delete this Skill?")) return;
-//     await fetch(`/api/admin/skills/${id}`, { method: "DELETE" });
-//     await load();
-//   };
-
-//   return (
-//     <AdminDialogShell
-//       open={open}
-//       onOpenChange={onOpenChange}
-//       title="MANAGE SKILLS"
-//       toolbar={
-//         !editing && (
-//           <Button
-//             variant="ghost"
-//             size="sm"
-//             onClick={() =>
-//               setEditing({
-//                 ...EMPTY,
-//                 input_schema: JSON.stringify(EMPTY.input_schema, null, 2),
-//               })
-//             }
-//             className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 hover:bg-cyan-500/10"
-//           >
-//             <Plus className="w-3.5 h-3.5 mr-1" /> NEW
-//           </Button>
-//         )
-//       }
-//     >
-//       {!editing ? (
-//         <AdminTable
-//           columns={["Name", "Display", "Type", "Enabled", "Default"]}
-//           loading={loading}
-//           emptyText="No Skill, click NEW to create one"
-//           rows={list.map((s) => ({
-//             id: s.id!,
-//             cells: [
-//               <span key="n" className="font-mono text-cyan-300">
-//                 {s.name}
-//               </span>,
-//               s.display_name ?? "-",
-//               <span key="t" className="text-slate-400">
-//                 {s.handler_type}
-//               </span>,
-//               <span
-//                 key="e"
-//                 className={s.enabled ? "text-emerald-400" : "text-slate-500"}
-//               >
-//                 {s.enabled ? "ON" : "OFF"}
-//               </span>,
-//               <span
-//                 key="d"
-//                 className={s.is_default ? "text-emerald-400" : "text-slate-500"}
-//               >
-//                 {s.is_default ? "YES" : "NO"}
-//               </span>,
-//             ],
-//           }))}
-//           onEdit={(id) => {
-//             const s = list.find((x) => x.id === id);
-//             if (s)
-//               setEditing({
-//                 ...s,
-//                 input_schema: JSON.stringify(s.input_schema, null, 2),
-//               });
-//           }}
-//           onDelete={remove}
-//         />
-//       ) : (
-//         <div className="space-y-3 max-w-2xl">
-//           <button
-//             type="button"
-//             onClick={() => setEditing(null)}
-//             className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
-//           >
-//             <ArrowLeft className="w-3.5 h-3.5" /> 返回列表
-//           </button>
-
-//           <AdminFormField
-//             label="Name"
-//             value={editing.name}
-//             onChange={(v) => setEditing({ ...editing, name: v })}
-//           />
-//           <AdminFormField
-//             label="Display Name"
-//             value={editing.display_name}
-//             onChange={(v) => setEditing({ ...editing, display_name: v })}
-//           />
-//           <AdminFormField
-//             label="Description"
-//             value={editing.description}
-//             onChange={(v) => setEditing({ ...editing, description: v })}
-//             textarea
-//             rows={3}
-//           />
-//           <AdminFormField
-//             label="Handler Type (http/function/mcp)"
-//             value={editing.handler_type}
-//             onChange={(v) => setEditing({ ...editing, handler_type: v })}
-//           />
-//           <AdminFormField
-//             label="Endpoint"
-//             value={editing.endpoint}
-//             onChange={(v) => setEditing({ ...editing, endpoint: v })}
-//           />
-//           <AdminFormField
-//             label="Handler Ref"
-//             value={editing.handler_ref}
-//             onChange={(v) => setEditing({ ...editing, handler_ref: v })}
-//           />
-//           <AdminFormField
-//             label="Input Schema (JSON)"
-//             value={
-//               typeof editing.input_schema === "string"
-//                 ? editing.input_schema
-//                 : JSON.stringify(editing.input_schema, null, 2)
-//             }
-//             onChange={(v) => setEditing({ ...editing, input_schema: v })}
-//             textarea
-//             rows={8}
-//           />
-
-//           <div className="flex gap-4">
-//             <label className="flex items-center gap-2 text-xs text-slate-300">
-//               <input
-//                 type="checkbox"
-//                 checked={editing.enabled}
-//                 onChange={(e) =>
-//                   setEditing({ ...editing, enabled: e.target.checked })
-//                 }
-//               />
-//               Enabled
-//             </label>
-//             <label className="flex items-center gap-2 text-xs text-slate-300">
-//               <input
-//                 type="checkbox"
-//                 checked={editing.is_default}
-//                 onChange={(e) =>
-//                   setEditing({ ...editing, is_default: e.target.checked })
-//                 }
-//               />
-//               Default
-//             </label>
-//           </div>
-
-//           <div className="flex justify-end gap-2 pt-2">
-//             <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-//               Cancel
-//             </Button>
-//             <Button
-//               size="sm"
-//               onClick={save}
-//               disabled={saving}
-//               className="bg-cyan-600 hover:bg-cyan-500 text-white"
-//             >
-//               <Save className="w-3.5 h-3.5 mr-1" />
-//               {saving ? "Saving..." : "Save"}
-//             </Button>
-//           </div>
-//         </div>
-//       )}
-//     </AdminDialogShell>
-//   );
-// }

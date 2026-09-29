@@ -634,11 +634,11 @@ export function ManageAccountsDepartmentsDialog({
               </div>
 
               {/* 负责人：从用户列表下拉选择 */}
-              <p> </p>
+              {/* <p> </p> */}
               <div className="glass-field-wrapper">
                 <label
                   htmlFor="manager"
-                  className="!text-xs !font-semibold !uppercase !tracking-widest !text-muted-foreground !mb-2 !flex !items-center !gap-2 text-cyan-600 dark:text-cyan-400"
+                  className="!text-xs !font-semibold !uppercase !tracking-widest !mb-2 !flex !items-center !gap-2 text-cyan-600 dark:text-cyan-400"
                 >
                   负责人
                 </label>
@@ -651,7 +651,7 @@ export function ManageAccountsDepartmentsDialog({
                         : prev,
                     )
                   }
-                  className="w-full h-9 px-3 rounded-lg bg-card border border-border text-foreground text-xs
+                  className="w-full h-11 px-3 rounded-lg bg-card border border-border text-foreground text-xs
                focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none
                focus:shadow-[0_0_12px_rgba(6,182,212,0.15)]
                transition-all duration-300 cursor-pointer appearance-none
