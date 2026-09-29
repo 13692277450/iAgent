@@ -12,7 +12,7 @@
  Target Server Version : 160015 (160015)
  File Encoding         : 65001
 
- Date: 11/09/2026 21:54:12
+ Date: 29/09/2026 18:08:19
 */
 
 
@@ -28,10 +28,11 @@ MAXVALUE 2147483647
 START 1
 CACHE 1
 ),
-  "username" varchar(255) COLLATE "pg_catalog"."default",
-  "password" varchar(255) COLLATE "pg_catalog"."default",
+  "username" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "password" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "department" varchar(255) COLLATE "pg_catalog"."default",
-  "islocker" bool
+  "islocker" bool,
+  "isAdmin" bool NOT NULL
 )
 ;
 

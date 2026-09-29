@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AdminDialogShell } from "./admin/adminDialogShell";
-import { AdminTable } from "./admin/adminTable";
-import { AdminFormField } from "./admin/adminFormField";
+import { AdminDialogShell } from "@/components/admin/adminDialogShell";
+import { AdminTable } from "@/components/admin/adminTable";
+import { AdminFormField } from "@/components/admin/adminFormField";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
@@ -384,7 +384,7 @@ export function ManageMCPServersDialog({
                   </span>,
                 ],
               }))}
-              onEdit={(id) => {
+              onEdit={(id: number) => {
                 const s = list.find((x) => x.id === id);
                 if (s)
                   setEditing({
@@ -426,7 +426,9 @@ export function ManageMCPServersDialog({
                 <Server className="w-4 h-4 text-cyan-400" />
                 <span className="text-muted-foreground/60">/</span>
                 <span className="text-cyan-600 dark:text-cyan-400/80">
-                  {editing.id ? editing.name || t("admin.mcpEdit") : t("admin.mcpCreate")}
+                  {editing.id
+                    ? editing.name || t("admin.mcpEdit")
+                    : t("admin.mcpCreate")}
                 </span>
               </div>
             </div>
@@ -437,14 +439,16 @@ export function ManageMCPServersDialog({
                 <AdminFormField
                   label={t("admin.mcpName")}
                   value={editing.name}
-                  onChange={(v) => setEditing({ ...editing, name: v })}
+                  onChange={(v: string) => setEditing({ ...editing, name: v })}
                 />
               </div>
               <div className="glass-field-wrapper">
                 <AdminFormField
                   label={t("admin.mcpPermission")}
                   value={editing.permission}
-                  onChange={(v) => setEditing({ ...editing, permission: v })}
+                  onChange={(v: string) =>
+                    setEditing({ ...editing, permission: v })
+                  }
                 />
               </div>
             </div>
@@ -462,7 +466,7 @@ export function ManageMCPServersDialog({
             {/* === 连接配置组 === */}
             <div className="p-5 rounded-xl bg-muted/30 border border-border space-y-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-                <h3 className="text-xs font-semibold text-cyan-600 dark:text-cyan-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-cyan-600 dark:text-cyan-400/80 uppercase tracking-[0.2em] flex items-center gap-2">
                 <Globe className="w-4 h-4" /> {t("admin.llmConnection")}
               </h3>
 
@@ -600,22 +604,13 @@ export function ManageMCPServersDialog({
                         "!rounded-lg !cursor-pointer",
                       )}
                     >
-                      <option
-                        value="read"
-                        className="bg-card text-foreground"
-                      >
+                      <option value="read" className="bg-card text-foreground">
                         read
                       </option>
-                      <option
-                        value="write"
-                        className="bg-card text-foreground"
-                      >
+                      <option value="write" className="bg-card text-foreground">
                         write
                       </option>
-                      <option
-                        value="admin"
-                        className="bg-card text-foreground"
-                      >
+                      <option value="admin" className="bg-card text-foreground">
                         admin
                       </option>
                     </select>

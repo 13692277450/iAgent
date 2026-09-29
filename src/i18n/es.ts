@@ -87,6 +87,7 @@ export const es: Dict = {
     manageMcp: "Gestionar servidores MCP",
     managePrompts: "Gestionar prompts del sistema",
     manageLlm: "Gestionar LLM",
+    manageAccountsDepartments: "Gestionar cuentas y departamentos",
     manageAbout: "Gestionar acerca de",
   },
   rag: {

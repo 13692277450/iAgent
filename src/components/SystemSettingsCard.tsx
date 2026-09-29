@@ -10,13 +10,20 @@ import { ManageLLMDialog } from "./ManageLLMDialog";
 import { useMcp } from "./mcp_provider";
 import { useI18n } from "./i18n-provider";
 import { ManageAbout } from "./ManageAbout";
+import { ManageAccountsDepartmentsDialog } from "./ManageAccountsDepartDialog";
 
 export function SystemSettingsCard() {
   const { refresh: refreshMcp } = useMcp(); // 👈 拿到 refresh
   const { t } = useI18n();
 
   const [openDialog, setOpenDialog] = useState<
-    "skills" | "mcp" | "prompts" | "llm" | "about" | null
+    | "skills"
+    | "mcp"
+    | "prompts"
+    | "llm"
+    | "accountsDepartments"
+    | "about"
+    | null
   >(null);
 
   const buttons = [
@@ -39,6 +46,11 @@ export function SystemSettingsCard() {
       key: "llm" as const,
       label: t("sidebar.manageLlm"),
       icon: Cpu,
+    },
+    {
+      key: "accountsDepartments" as const,
+      label: t("sidebar.manageAccountsDepartments"),
+      icon: BookAIcon,
     },
     {
       key: "about" as const,
@@ -89,6 +101,10 @@ export function SystemSettingsCard() {
       />
       <ManageLLMDialog
         open={openDialog === "llm"}
+        onOpenChange={(v) => !v && setOpenDialog(null)}
+      />
+      <ManageAccountsDepartmentsDialog
+        open={openDialog === "accountsDepartments"}
         onOpenChange={(v) => !v && setOpenDialog(null)}
       />
       <ManageAbout

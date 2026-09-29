@@ -87,6 +87,7 @@ export const fr: Dict = {
     manageMcp: "Gérer les serveurs MCP",
     managePrompts: "Gérer les prompts système",
     manageLlm: "Gérer les LLM",
+    manageAccountsDepartments: "Gérer les comptes et les départements",
     manageAbout: "Gérer les informations",
   },
   rag: {

@@ -87,6 +87,7 @@ export const zh: Dict = {
     manageMcp: "管理 MCP 服务器",
     managePrompts: "管理系统提示词",
     manageLlm: "管理 LLM",
+    manageAccountsDepartments: "管理账号和部门",
     manageAbout: "管理关于",
   },
   rag: {

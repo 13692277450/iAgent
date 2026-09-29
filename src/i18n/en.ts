@@ -99,6 +99,7 @@ export const en = {
     manageMcp: "Manage MCP Servers",
     managePrompts: "Manage System Prompt",
     manageLlm: "Manage LLM",
+    manageAccountsDepartments: "Manage Accounts & Departments",
     manageAbout: "Manage About",
   },
   rag: {

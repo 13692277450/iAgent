@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AdminDialogShell } from "./admin/adminDialogShell";
-import { AdminTable } from "./admin/adminTable";
-import { AdminFormField } from "./admin/adminFormField";
+import { AdminDialogShell } from "@/components/admin/adminDialogShell";
+import { AdminTable } from "@/components/admin/adminTable";
+import { AdminFormField } from "@/components/admin/adminFormField";
 import { Button } from "@/components/ui/button";
 import {
   Plus,

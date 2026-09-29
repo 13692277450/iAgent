@@ -1,14 +1,24 @@
 // src/components/token-calendar-content.tsx
 "use client";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { useI18n } from "@/components/i18n-provider";
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function TokenCalendarContent() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const isClient = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const [date, setDate] = useState<Date | undefined>(() => new Date());
   const [tokenMap, setTokenMap] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const { t } = useI18n();
+  const [month, setMonth] = useState<Date>(() => date ?? new Date());
 
   useEffect(() => {
     let cancelled = false;
@@ -41,22 +51,23 @@ export function TokenCalendarContent() {
     return tokenMap[`${y}-${m}-${day}`];
   };
 
-  const ref = date || new Date();
+  const ref = date;
 
   const monthTotal = Object.entries(tokenMap)
     .filter(([k]) => {
       const [y, m] = k.split("-").map(Number);
-      return y === ref.getFullYear() && m === ref.getMonth() + 1;
+      return (
+        ref !== undefined && y === ref.getFullYear() && m === ref.getMonth() + 1
+      );
     })
     .reduce((sum, [, v]) => sum + v, 0);
 
   const yearTotal = Object.entries(tokenMap)
     .filter(([k]) => {
       const [y] = k.split("-").map(Number);
-      return y === ref.getFullYear();
+      return ref !== undefined && y === ref.getFullYear();
     })
     .reduce((sum, [, v]) => sum + v, 0);
-  const [month, setMonth] = useState<Date>(new Date());
 
   return (
     <div className="space-y-5">
@@ -82,37 +93,41 @@ export function TokenCalendarContent() {
 
       {/* 日历容器 */}
       <div className="overflow-hidden rounded-lg border border-border bg-card/60 p-4 text-cyan-600 dark:text-cyan-400">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          month={month}
-          onMonthChange={setMonth}
-          captionLayout="dropdown"
-          startMonth={new Date(2020, 0)} // 2020年1月
-          endMonth={new Date(2030, 11)} // 2030年12月
-          className="w-full rounded-lg border border-border bg-card text-foreground"
-          components={{
-            DayButton: (props) => {
-              const usage = getTokenForDate(props.day.date);
-              return (
-                <CalendarDayButton
-                  {...props}
-                  className="rounded-md transition-colors hover:bg-primary/15 data-[selected=true]:bg-primary/25 data-[selected=true]:text-cyan-700 dark:data-[selected=true]:text-cyan-300 data-[selected=true]:border-primary/50"
-                >
-                  <span>{props.children}</span>
-                  {usage !== undefined && (
-                    <span className="text-[14px] font-semibold leading-none text-orange-600 dark:text-orange-400">
-                      {usage >= 1000
-                        ? `Total: ${(usage / 1000).toFixed(1)}k`
-                        : `Total: ${usage}`}
-                    </span>
-                  )}
-                </CalendarDayButton>
-              );
-            },
-          }}
-        />
+        {isClient ? (
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            month={month}
+            onMonthChange={setMonth}
+            captionLayout="dropdown"
+            startMonth={new Date(2020, 0)} // 2020年1月
+            endMonth={new Date(2030, 11)} // 2030年12月
+            className="w-full rounded-lg border border-border bg-card text-foreground"
+            components={{
+              DayButton: (props) => {
+                const usage = getTokenForDate(props.day.date);
+                return (
+                  <CalendarDayButton
+                    {...props}
+                    className="rounded-md transition-colors hover:bg-primary/15 data-[selected=true]:bg-primary/25 data-[selected=true]:text-cyan-700 dark:data-[selected=true]:text-cyan-300 data-[selected=true]:border-primary/50"
+                  >
+                    <span>{props.children}</span>
+                    {usage !== undefined && (
+                      <span className="text-[14px] font-semibold leading-none text-orange-600 dark:text-orange-400">
+                        {usage >= 1000
+                          ? `Total: ${(usage / 1000).toFixed(1)}k`
+                          : `Total: ${usage}`}
+                      </span>
+                    )}
+                  </CalendarDayButton>
+                );
+              },
+            }}
+          />
+        ) : (
+          <div className="min-h-[280px]" />
+        )}
       </div>
     </div>
   );
