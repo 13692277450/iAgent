@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Wrench, Server, BookAIcon, Cpu } from "lucide-react";
+import { Settings, Wrench, Server, BookAIcon, Cpu, Space } from "lucide-react";
 import { ManageSkillsDialog } from "./ManageSkillsDialog";
 import { ManageMCPServersDialog } from "./ManageMCPServersDialog";
 import { ManageSystemPromptsDialog } from "./ManageSystemPromptsDialog";
@@ -111,6 +111,18 @@ export function SystemSettingsCard() {
         open={openDialog === "about"}
         onOpenChange={(v) => !v && setOpenDialog(null)}
       />
+
+      <Card className="glow-card text-cyan-600 dark:text-cyan-400 text-center">
+        <CardContent className="p-2 text-cyan-600 dark:text-cyan-400 text-center">
+          SUPPORT:{" "}
+          <a
+            className="text-cyan-600 dark:text-cyan-400 text-center"
+            href="https://www.aipercy.top"
+          >
+            WWW.AIPERCY.TOP
+          </a>
+        </CardContent>
+      </Card>
     </>
   );
 }

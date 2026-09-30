@@ -110,7 +110,10 @@ export function TokenCalendarContent() {
                 return (
                   <CalendarDayButton
                     {...props}
-                    className="rounded-md transition-colors hover:bg-primary/15 data-[selected=true]:bg-primary/25 data-[selected=true]:text-cyan-700 dark:data-[selected=true]:text-cyan-300 data-[selected=true]:border-primary/50"
+                    className="rounded-md transition-colors hover:bg-primary/15
+                        data-[selected=true]:!bg-transparent
+                        data-[selected=true]:!text-cyan-700 dark:data-[selected=true]:!text-cyan-300
+                        data-[selected=true]:!ring-1 data-[selected=true]:!ring-primary/50"
                   >
                     <span>{props.children}</span>
                     {usage !== undefined && (

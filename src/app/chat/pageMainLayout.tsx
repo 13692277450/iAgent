@@ -3,7 +3,7 @@
 import Chat from "./chatpage";
 
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TokenCalendarDialog } from "./dialogTokenUsageUI";
 import { LogCard } from "./pageLogs";
@@ -24,6 +24,15 @@ import { TokenSpeedGauge } from "@/components/Token_speed_gauge";
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const [tokenSpeed, setTokenSpeed] = useState(0);
+  const [speedSamples, setSpeedSamples] = useState<number[]>([]);
+  const recordTokenSpeed = useCallback((speed: number) => {
+    setTokenSpeed(speed);
+    setSpeedSamples((samples) => [...samples.slice(-59), speed]);
+  }, []);
+  const averageTokenSpeed = speedSamples.length
+    ? speedSamples.reduce((total, speed) => total + speed, 0) /
+      speedSamples.length
+    : 0;
   const { triggerRefresh, restoreId, clearRestore } = useConversation();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
@@ -126,7 +135,7 @@ export default function Layout() {
         <div className="min-w-0 flex-1 bg-background p-2 pb-[2px]">
           <div className="flex h-full min-h-0 flex-col">
             <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-muted/50 p-2">
-              <Chat onTokenSpeedChange={setTokenSpeed} />
+              <Chat onTokenSpeedChange={recordTokenSpeed} />
             </div>
           </div>
         </div>
@@ -142,22 +151,17 @@ export default function Layout() {
             {t("token.view")}
           </Button>
           <TokenCalendarDialog open={open} onOpenChange={setOpen} />
-          {/* <div className="p-4 rounded-xl border border-border bg-card">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              输出速度
-            </h3>
-            <TokenSpeedGauge value={tokenSpeed} max={5000} />
-          </div> */}
-
           {/* 右边栏 */}
-          <aside className="w-64 border-l border-border p-4 space-y-4 overflow-y-auto bg-card/30">
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                输出速度
-              </h3>
-              <TokenSpeedGauge value={tokenSpeed} max={5000} />
-            </div>
-          </aside>
+          <div className="p-4 rounded-xl border border-border bg-card">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3 text-cyan-600 dark:text-cyan-400">
+              TOKEN OUTPUT SPEED
+            </h3>
+            <TokenSpeedGauge
+              value={tokenSpeed}
+              samples={speedSamples}
+              average={averageTokenSpeed}
+            />
+          </div>
 
           <LogCard />
 

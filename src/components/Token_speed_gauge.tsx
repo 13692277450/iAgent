@@ -1,169 +1,153 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-
 export function TokenSpeedGauge({
   value,
+  samples,
+  average,
   max = 5000,
 }: {
   value: number;
+  samples: number[];
+  average: number;
   max?: number;
 }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const animRef = useRef<number | null>(null);
-
-  // 平滑过渡到目标值
-  useEffect(() => {
-    const animate = () => {
-      setDisplayValue((prev) => {
-        const diff = value - prev;
-        if (Math.abs(diff) < 1) return value;
-        return prev + diff * 0.2;
-      });
-      animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
-  }, [value]);
-
-  // 角度：0 → -120°，max → 120°
-  const angle = -120 + (Math.min(displayValue, max) / max) * 240;
-
-  // SVG 圆弧参数
-  const size = 180;
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = 70;
-  const strokeWidth = 12;
-
-  // 从 -120° 到 120° 的弧线
-  const startAngle = -120;
-  const endAngle = 120;
-  const totalAngle = endAngle - startAngle;
-
-  const polarToCartesian = (angleDeg: number, r: number) => {
-    const rad = ((angleDeg - 90) * Math.PI) / 180;
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy + r * Math.sin(rad),
-    };
-  };
-
-  const describeArc = (start: number, end: number, r: number) => {
-    const s = polarToCartesian(end, r);
-    const e = polarToCartesian(start, r);
-    const largeArc = end - start <= 180 ? 0 : 1;
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${largeArc} 0 ${e.x} ${e.y}`;
-  };
-
-  const bgArc = describeArc(startAngle, endAngle, radius);
-  const valueArc = describeArc(
-    startAngle,
-    startAngle + (displayValue / max) * totalAngle,
-    radius,
-  );
-
-  // 指针终点
-  const needleEnd = polarToCartesian(angle, radius - 10);
-
-  // 刻度
-  const ticks = [0, 1000, 2000, 3000, 4000, 5000];
-  const viewBoxValue = `0 0 ${size} ${size}`;
+  const width = 320;
+  const height = 156;
+  const left = 34;
+  const right = 10;
+  const top = 12;
+  const bottom = 122;
+  const plotWidth = width - left - right;
+  const plotHeight = bottom - top;
+  const visibleSamples = samples.slice(-60);
+  const scaleMax = Math.max(max, ...visibleSamples, value, 1);
+  const points = visibleSamples.map((sample, index) => ({
+    x:
+      left +
+      (visibleSamples.length === 1
+        ? plotWidth
+        : (index / (visibleSamples.length - 1)) * plotWidth),
+    y: bottom - (Math.max(0, sample) / scaleMax) * plotHeight,
+  }));
+  const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const areaPoints = points.length
+    ? `${left},${bottom} ${linePoints} ${points[points.length - 1].x},${bottom}`
+    : "";
+  const averageY = bottom - (Math.max(0, average) / scaleMax) * plotHeight;
 
   return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={size} viewBox={viewBoxValue}>
-        <title>Token speed gauge</title>
-        {/* 背景弧 */}
-        <path
-          d={bgArc}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          className="text-muted/30"
-        />
-
-        {/* 值弧 */}
-        <path
-          d={valueArc}
-          fill="none"
-          stroke="url(#speedGradient)"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
-
-        {/* 渐变定义 */}
+    <div className="space-y-3">
+      <svg
+        className="block h-auto w-full overflow-visible"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Token speed trend chart"
+      >
+        <title>Token speed trend</title>
         <defs>
-          <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#06b6d4" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#f97316" />
+          <linearGradient id="token-speed-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.34" />
+            <stop offset="100%" stopColor="#0284c7" stopOpacity="0.01" />
           </linearGradient>
+          <filter
+            id="token-speed-glow"
+            x="-30%"
+            y="-50%"
+            width="160%"
+            height="200%"
+          >
+            <feGaussianBlur stdDeviation="3.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
-
-        {/* 刻度线和数字 */}
-        {ticks.map((tick) => {
-          const tickAngle = startAngle + (tick / max) * totalAngle;
-          const outer = polarToCartesian(
-            tickAngle,
-            radius + strokeWidth / 2 + 4,
-          );
-          const inner = polarToCartesian(
-            tickAngle,
-            radius + strokeWidth / 2 + 10,
-          );
-          const label = polarToCartesian(tickAngle, radius - 20);
+        {[0, 0.5, 1].map((fraction) => {
+          const y = top + plotHeight * fraction;
+          const label = Math.round(scaleMax * (1 - fraction));
           return (
-            <g key={tick}>
+            <g key={fraction}>
               <line
-                x1={outer.x}
-                y1={outer.y}
-                x2={inner.x}
-                y2={inner.y}
-                stroke="currentColor"
-                strokeWidth={2}
-                className="text-muted-foreground/40"
+                x1={left}
+                y1={y}
+                x2={width - right}
+                y2={y}
+                stroke="#38bdf8"
+                strokeOpacity={fraction === 1 ? 0.2 : 0.1}
+                strokeDasharray={fraction === 1 ? undefined : "3 6"}
               />
               <text
-                x={label.x}
-                y={label.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="fill-muted-foreground text-[8px]"
+                x={left - 8}
+                y={y + 3}
+                textAnchor="end"
+                fill="#7dd3fc"
+                fillOpacity="0.62"
+                fontSize="8"
               >
-                {tick / 1000}k
+                {label}
               </text>
             </g>
           );
         })}
-
-        {/* 指针 */}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={needleEnd.x}
-          y2={needleEnd.y}
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          className="text-cyan-500"
-        />
-
-        {/* 中心圆 */}
-        <circle cx={cx} cy={cy} r={6} className="fill-cyan-500" />
-        <circle cx={cx} cy={cy} r={3} className="fill-background" />
+        {average > 0 && (
+          <line
+            x1={left}
+            y1={averageY}
+            x2={width - right}
+            y2={averageY}
+            stroke="#67e8f9"
+            strokeOpacity="0.55"
+            strokeDasharray="4 5"
+          />
+        )}
+        {points.length > 0 && (
+          <>
+            <polygon points={areaPoints} fill="url(#token-speed-area)" />
+            <polyline
+              points={linePoints}
+              fill="none"
+              stroke="#38bdf8"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#token-speed-glow)"
+            />
+            <circle
+              cx={points[points.length - 1].x}
+              cy={points[points.length - 1].y}
+              r="4"
+              fill="#e0f2fe"
+              stroke="#38bdf8"
+              strokeWidth="2"
+              filter="url(#token-speed-glow)"
+            />
+          </>
+        )}
+        <text x={left} y={145} fill="#0FD340" fillOpacity="0.85" fontSize="8">
+          Past {visibleSamples.length} times samples
+        </text>
       </svg>
-
-      {/* 数值显示 */}
-      <div className="mt-2 text-center">
-        <div className="text-2xl font-bold font-mono text-cyan-500">
-          {Math.round(displayValue)}
+      <div className="grid grid-cols-2 gap-3 border-t border-sky-400/15 pt-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground text-center">
+            CURRENT SPEED
+          </div>
+          <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-sky-300 drop-shadow-[0_0_10px_rgba(56,189,248,0.55)] text-center">
+            {Math.round(value).toLocaleString()}
+            <span className="ml-1 text-[10px] font-normal text-sky-200/60 ">
+              Tokens/s
+            </span>
+          </div>
         </div>
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          tokens / sec
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground text-center">
+            AVERAGE SPEED
+          </div>
+          <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-cyan-200 text-center">
+            {Math.round(average).toLocaleString()}
+            <span className="ml-1 text-[10px] font-normal text-cyan-100/50 text-center">
+              Tokens/s
+            </span>
+          </div>
         </div>
       </div>
     </div>
