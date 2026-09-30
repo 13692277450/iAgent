@@ -1,6 +1,7 @@
 /** biome-ignore-all assist/source/organizeImports: <explanation> */
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 "use client";
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useMcp } from "@/components/mcp_provider";
 import { useSkills } from "@/components/assistant-ui/elements/skills-provider";
@@ -9,9 +10,8 @@ import {
   AssistantRuntimeProvider,
   useAuiState,
   useAui,
+  WebSpeechDictationAdapter,
 } from "@assistant-ui/react";
-import { WebSpeechDictationAdapter } from "@assistant-ui/react";
-
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { DefaultChatTransport } from "ai";
@@ -19,13 +19,11 @@ import { log, LogLevel, logWithColor, styledLog } from "@/lib/logger";
 
 import {
   BrainCircuit,
-  Mic,
   Globe,
   Save,
   Cpu,
   BookAIcon,
   ChevronDown,
-  Plus,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,7 +36,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n-provider";
-import stream from "node:stream";
 
 type LLMModel = {
   id: number;
@@ -60,7 +57,11 @@ type SystemPrompt = {
 // ============================================================
 // 外层：状态管理
 // ============================================================
-export default function ChatPage() {
+export default function ChatPage({
+  onTokenSpeedChange,
+}: {
+  onTokenSpeedChange: (speed: number) => void;
+}) {
   const [enableRAG, setEnableRAG] = useState(false);
   const [enableMic, setEnableMic] = useState(false);
   const { selected } = useMcp();
@@ -80,16 +81,6 @@ export default function ChatPage() {
       new DefaultChatTransport({
         api: "/api/chat",
         body: (options: any) => {
-          // 防御性检查：确保 messages 是数组
-          // const allMessages = options?.messages ?? [];
-          // let trimmedMessages =
-          //   Array.isArray(allMessages) && allMessages.length > MAX_MESSAGES;
-
-          // MAX_MESSAGES === 0
-          //   ? []
-          //   : allMessages.length > MAX_MESSAGES
-          //     ? allMessages.slice(-MAX_MESSAGES)
-          //     : allMessages;
           const allMessages = options?.messages ?? [];
 
           const trimmedMessages =
@@ -98,6 +89,7 @@ export default function ChatPage() {
               : allMessages.length > MAX_MESSAGES
                 ? allMessages.slice(-MAX_MESSAGES)
                 : allMessages;
+
           return {
             messages: trimmedMessages,
             deepThink,
@@ -152,9 +144,9 @@ export default function ChatPage() {
     adapters: {
       dictation: WebSpeechDictationAdapter.isSupported()
         ? new WebSpeechDictationAdapter({
-            language: "zh-CN", // 默认跟随浏览器语言，建议显式设为中文
-            continuous: true, // 停顿后继续录音（默认 true）
-            interimResults: true, // 实时返回中间结果，边说话边出字
+            language: "zh-CN",
+            continuous: true,
+            interimResults: true,
           })
         : undefined,
     },
@@ -178,6 +170,7 @@ export default function ChatPage() {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ChatInner
+        onTokenSpeedChange={onTokenSpeedChange}
         deepThink={deepThink}
         setDeepThink={setDeepThink}
         systemPrompts={systemPrompts}
@@ -203,6 +196,7 @@ export default function ChatPage() {
 // Inner：UI + 恢复逻辑
 // ============================================================
 type ChatInnerProps = {
+  onTokenSpeedChange: (speed: number) => void;
   deepThink: boolean;
   setDeepThink: (v: boolean) => void;
   systemPrompts: SystemPrompt[];
@@ -222,6 +216,7 @@ type ChatInnerProps = {
 };
 
 function ChatInner({
+  onTokenSpeedChange,
   deepThink,
   setDeepThink,
   systemPrompts,
@@ -239,8 +234,7 @@ function ChatInner({
   enableMic,
   setEnableMic,
 }: ChatInnerProps) {
-  const { triggerRefresh, restoreId, clearRestore, requestRestore } =
-    useConversation();
+  const { triggerRefresh, restoreId, clearRestore } = useConversation();
   const { t } = useI18n();
   const [saving, setSaving] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -259,8 +253,6 @@ function ChatInner({
 
   const messages = useAuiState((s) => s.thread.messages);
   const aui = useAui();
-  // 底层 AI SDK useChat 实例（由 useAISDKRuntime 通过 extras 提供），
-  // 恢复历史会话时直接注入消息，这是与适配器内部一致的受支持方式
   const chat = useAuiState(
     (s) =>
       s.thread.extras as
@@ -269,13 +261,68 @@ function ChatInner({
   )?.chat;
 
   // ============================================================
+  // Token 输出速度计算
+  // ============================================================
+  const speedRef = useRef({
+    lastTextLength: 0,
+    lastTime: Date.now(),
+    samples: [] as number[],
+    idleTimer: null as ReturnType<typeof setTimeout> | null,
+  });
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.role !== "assistant") return;
+
+    const text =
+      lastMsg.parts
+        ?.filter((p: any) => p.type === "text")
+        .map((p: any) => p.text ?? "")
+        .join("") ?? "";
+
+    const now = Date.now();
+    const state = speedRef.current;
+    const deltaChars = text.length - state.lastTextLength;
+    const deltaMs = now - state.lastTime;
+
+    if (deltaChars > 0 && deltaMs > 0) {
+      const charsPerSec = (deltaChars / deltaMs) * 1000;
+
+      state.samples.push(charsPerSec);
+      if (state.samples.length > 10) state.samples.shift();
+
+      const avg =
+        state.samples.reduce((a, b) => a + b, 0) / state.samples.length;
+
+      onTokenSpeedChange(Math.round(avg));
+
+      state.lastTextLength = text.length;
+      state.lastTime = now;
+
+      if (state.idleTimer) clearTimeout(state.idleTimer);
+      state.idleTimer = setTimeout(() => {
+        onTokenSpeedChange(0);
+        state.samples = [];
+      }, 1500);
+    }
+  }, [messages, onTokenSpeedChange]);
+
+  useEffect(() => {
+    return () => {
+      if (speedRef.current.idleTimer) {
+        clearTimeout(speedRef.current.idleTimer);
+      }
+    };
+  }, []);
+
+  // ============================================================
   // 恢复历史 / 新建会话
   // ============================================================
-  // 记录最近一次恢复请求，避免快速连续点击时旧请求覆盖新请求
   const restoreSeqRef = useRef(0);
 
   useEffect(() => {
-    // 没有要恢复的 ID，直接跳过
     if (restoreId === null) return;
 
     const seq = ++restoreSeqRef.current;
@@ -284,7 +331,6 @@ function ChatInner({
       if (isLatest()) clearRestore();
     };
 
-    // 1. 新建会话：ID 为 0
     if (restoreId === 0) {
       console.log("[restore] 创建新会话");
       if (chat && typeof chat.setMessages === "function") {
@@ -297,7 +343,6 @@ function ChatInner({
       return;
     }
 
-    // 2. 恢复历史会话
     console.log(`[CONVERSATION] Recover conversation ID: ${restoreId}`);
     log(`[CONVERSATION] Recover conversation ID: ${restoreId}`);
 
@@ -314,7 +359,6 @@ function ChatInner({
           return;
         }
 
-        // 防御性检查：确保 messages 存在且是数组
         const rawMessages = data?.messages;
         if (!Array.isArray(rawMessages)) {
           console.warn(
@@ -331,7 +375,6 @@ function ChatInner({
           return;
         }
 
-        // Convert raw messages to UIMessage format for AI SDK ({ id, role, parts, createdAt })
         const uiMessages = rawMessages
           .filter(
             (m: any) =>
@@ -346,7 +389,6 @@ function ChatInner({
               if (typeof m.content === "string") {
                 text = m.content;
               } else if (m.parts) {
-                // Process parts string if it's a JSON string
                 const parts =
                   typeof m.parts === "string" ? JSON.parse(m.parts) : m.parts;
 
@@ -371,11 +413,7 @@ function ChatInner({
             }
 
             return {
-              id: String(
-                m.id ||
-                  `restored-${idx}), 
-                // -${Date.now()}`,
-              ),
+              id: String(m.id || `restored-${idx}`),
               role: m.role,
               createdAt:
                 m.created_at || m.createdAt
@@ -385,7 +423,6 @@ function ChatInner({
             };
           })
           .filter((m: any) => {
-            // Filter out empty text messages
             const hasText = m.parts?.some((p: any) => p.text?.trim());
             return hasText || m.role === "assistant";
           });
@@ -394,10 +431,6 @@ function ChatInner({
 
         if (!isLatest()) return;
 
-        // 关键步骤：直接设置 AI SDK chat 的消息。
-        // 不能用 aui.thread().reset()：AI SDK 适配器要求消息带有内部绑定，
-        // reset() 生成的新消息会被 getExternalStoreMessages 解析为空数组，
-        // 反而把消息清空。
         chat.setMessages(uiMessages);
 
         setConversationId(restoreId as any);
@@ -428,7 +461,7 @@ function ChatInner({
         );
       })
       .catch((err) => log("Failed to fetch system prompts", err));
-  }, []); // Remove unnecessary dependency
+  }, []);
 
   // Load LLM models
   useEffect(() => {
@@ -444,7 +477,6 @@ function ChatInner({
 
   // Save conversation
   const handleSave = async () => {
-    // Make sure messages exist
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       showToast("❌ " + t("chat.noMessages"));
       return;
@@ -482,197 +514,172 @@ function ChatInner({
     }
   };
 
-  // 新会话
-  // const handleNewChat = () => {
-  //   requestRestore(0); // Trigger restore with restoreId = 0
-  //   setConversationId(null);
-  // };
-
   return (
-    <div className="h-full w-full flex flex-col">
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Thread
-          composerToolbar={
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNewChat}
-                className="h-8 text-xs text-cyan-300 bg-slate-900/60 border border-cyan-400/30 hover:bg-cyan-500/10"
-                title="New Conversation"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                NEW
-              </Button> */}
-
-              {/* DeepThink */}
-              <Button
-                variant="ghost"
-                type="button"
-                onClick={() => {
-                  const next = !deepThink;
-                  setDeepThink(next);
-                  log(`[DEEP_THINK] DeepThink shifted: ${next}`);
-                }}
-                className={`h-8 px-3 rounded-lg text-xs border transition-all ${
-                  deepThink
-                    ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 hover:bg-cyan-500/25"
-                    : "bg-card text-muted-foreground border-border shadow-sm hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <BrainCircuit className="w-4 h-4 mr-1.5" />
-                {deepThink ? t("chat.deepThinkOn") : t("chat.deepThinkOff")}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
-                  <BookAIcon className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
-                  {selectedSystemPrompt?.system_prompt_name ?? t("chat.prompt")}
-                  <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
+    <div className="h-full w-full flex">
+      {/* 主聊天区 */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <Thread
+            composerToolbar={
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* DeepThink */}
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    const next = !deepThink;
+                    setDeepThink(next);
+                    log(`[DEEP_THINK] DeepThink shifted: ${next}`);
+                  }}
+                  className={`h-8 px-3 rounded-lg text-xs border transition-all ${
+                    deepThink
+                      ? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 hover:bg-cyan-500/25"
+                      : "bg-card text-muted-foreground border-border shadow-sm hover:bg-muted hover:text-foreground"
+                  }`}
                 >
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
-                      {t("chat.systemPrompt")}
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  {systemPrompts.map((sp) => (
-                    <DropdownMenuItem
-                      key={sp.id}
-                      onClick={() => {
-                        setSelectedSystemPrompt(sp);
-                        log(
-                          `[SYSTEM] System Prompt: ${sp.system_prompt_content}`,
-                        );
-                      }}
-                      className={`cursor-pointer text-xs ${
-                        selectedSystemPrompt?.id === sp.id
-                          ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-                          : ""
-                      }`}
-                    >
-                      📜 {sp.system_prompt_name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <BrainCircuit className="w-4 h-4 mr-1.5" />
+                  {deepThink ? t("chat.deepThinkOn") : t("chat.deepThinkOff")}
+                </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
-                  <Cpu className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
-                  {selectedModel?.llm_model ?? t("chat.model")}
-                  <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
+                {/* System Prompt 下拉 */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
+                    <BookAIcon className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
+                    {selectedSystemPrompt?.system_prompt_name ??
+                      t("chat.prompt")}
+                    <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
+                  >
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
+                        {t("chat.systemPrompt")}
+                      </DropdownMenuLabel>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    {systemPrompts.map((sp) => (
+                      <DropdownMenuItem
+                        key={sp.id}
+                        onClick={() => {
+                          setSelectedSystemPrompt(sp);
+                          log(
+                            `[SYSTEM] System Prompt: ${sp.system_prompt_content}`,
+                          );
+                        }}
+                        className={`cursor-pointer text-xs ${
+                          selectedSystemPrompt?.id === sp.id
+                            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
+                            : ""
+                        }`}
+                      >
+                        📜 {sp.system_prompt_name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* 模型下拉 */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center shrink-0 h-8 px-3 rounded-lg text-xs border bg-card text-foreground border-border shadow-sm hover:bg-muted transition-colors">
+                    <Cpu className="w-4 h-4 mr-1.5 text-cyan-600 dark:text-cyan-400" />
+                    {selectedModel?.llm_model ?? t("chat.model")}
+                    <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-56 bg-popover text-popover-foreground border-border shadow-lg"
+                  >
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
+                        {t("chat.selectModel")}
+                      </DropdownMenuLabel>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    {models.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedModel(m);
+                          log(`[MODEL] Model Shifted To: ${m.llm_model}`);
+                        }}
+                        className={`cursor-pointer text-xs ${
+                          selectedModel?.id === m.id
+                            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
+                            : ""
+                        }`}
+                      >
+                        🚀 {m.llm_model}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* 保存 */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving || !messages || messages.length === 0}
+                  className="h-8 text-xs bg-card text-foreground border border-border shadow-sm hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400 disabled:opacity-40"
                 >
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-cyan-600 dark:text-cyan-400">
-                      {t("chat.selectModel")}
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  {models.map((m) => (
-                    <DropdownMenuItem
-                      key={m.id}
-                      onClick={() => {
-                        setSelectedModel(m);
-                        log(`[MODEL] Model Shifted To: ${m.llm_model}`);
-                      }}
-                      className={`cursor-pointer text-xs ${
-                        selectedModel?.id === m.id
-                          ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-                          : ""
-                      }`}
-                    >
-                      🚀 {m.llm_model}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <Save className="w-3.5 h-3.5 mr-1 text-cyan-600 dark:text-cyan-400" />
+                  {saving ? t("common.saving") : t("chat.save")}
+                </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSave}
-                disabled={saving || !messages || messages.length === 0}
-                className="h-8 text-xs bg-card text-foreground border border-border shadow-sm hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400 disabled:opacity-40"
-              >
-                <Save className="w-3.5 h-3.5 mr-1 text-cyan-600 dark:text-cyan-400" />
-                {saving ? t("common.saving") : t("chat.save")}
-              </Button>
+                {/* 联网搜索 */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const next = !enableSearch;
+                    setEnableSearch(next);
+                    log(`[SEARCH] Search Internet Set: ${next}`);
+                  }}
+                  title={
+                    enableSearch ? t("chat.internetOn") : t("chat.internetOff")
+                  }
+                  className={`h-8 w-8 transition-colors ${
+                    enableSearch
+                      ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                      : "text-muted-foreground bg-card border border-border hover:bg-muted"
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                </Button>
 
-              {/* <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  const next = !enableMic;
-                  setEnableMic(next);
-                  log(`[MIC] Mic Set: ${next}`);
-                }}
-                title={enableMic ? t("chat.micOn") : t("chat.micOff")}
-                className={`h-8 w-8 transition-colors ${
-                  enableMic
-                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
-                }`}
-              >
-                <Mic className="w-4 h-4" />
-              </Button> */}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  const next = !enableSearch;
-                  setEnableSearch(next);
-                  log(`[SEARCH] Search Internet Set: ${next}`);
-                }}
-                title={
-                  enableSearch ? t("chat.internetOn") : t("chat.internetOff")
-                }
-                className={`h-8 w-8 transition-colors ${
-                  enableSearch
-                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
-                }`}
-              >
-                <Globe className="w-4 h-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  const next = !enableRAG;
-                  setEnableRAG(next);
-                  styledLog(
-                    `[RAG] RAG Set: ${next}`,
-                    next
-                      ? "color: #22d3ee; font-weight: bold"
-                      : "color: #9F9207",
-                    next ? "info" : "log",
-                  );
-                }}
-                title={enableRAG ? t("chat.ragOn") : t("chat.ragOff")}
-                className={`h-8 w-8 transition-colors ${
-                  enableRAG
-                    ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
-                    : "text-muted-foreground bg-card border border-border hover:bg-muted"
-                }`}
-              >
-                <BookAIcon className="w-4 h-4" />
-              </Button>
-            </div>
-          }
-        />
+                {/* RAG */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const next = !enableRAG;
+                    setEnableRAG(next);
+                    styledLog(
+                      `[RAG] RAG Set: ${next}`,
+                      next
+                        ? "color: #22d3ee; font-weight: bold"
+                        : "color: #9F9207",
+                      next ? "info" : "log",
+                    );
+                  }}
+                  title={enableRAG ? t("chat.ragOn") : t("chat.ragOff")}
+                  className={`h-8 w-8 transition-colors ${
+                    enableRAG
+                      ? "text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                      : "text-muted-foreground bg-card border border-border hover:bg-muted"
+                  }`}
+                >
+                  <BookAIcon className="w-4 h-4" />
+                </Button>
+              </div>
+            }
+          />
+        </div>
       </div>
 
+      {/* Toast */}
       <div
         className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm border backdrop-blur-md transition-all duration-300 ${
           toast.visible
