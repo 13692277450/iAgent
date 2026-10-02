@@ -1,0 +1,97 @@
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name aipercy.top www.aipercy.top;
+
+    ssl_certificate /etc/letsencrypt/live/www.aipercy.top/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.aipercy.top/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/aipercy.top/chain.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    client_max_body_size 50M;
+
+    # ---------- WordPress 路径 ----------
+    location ~ ^/(wp-admin|wp-content|wp-includes|wp-login\.php|wp-json|wp-cron\.php) {
+        root /var/www/html;
+        index index.php;
+        try_files $uri $uri/ /index.php?$args;
+
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+    }
+
+    # 根目录下的 PHP 文件
+    location ~ \.php$ {
+        root /var/www/html;
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    # ---------- 静态资源 ----------
+    location = /assets/ {
+        root /var/www/html;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+    }
+
+    location = /iagent/software/ {
+        alias /var/www/html/iagent/software/;
+        autoindex off;
+        add_header Content-Disposition "attachment";
+        add_header Cache-Control "no-cache";
+    }
+
+    location = /index.html {
+        root /var/www/html;
+        try_files /index.html =404;
+    }
+
+    location = /indexgok8s.html {
+        root /var/www/html;
+        try_files /indexgok8s.html =404;
+    }
+
+    # ---------- 反代到 Next.js ----------
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_cache_valid 200 60m;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
