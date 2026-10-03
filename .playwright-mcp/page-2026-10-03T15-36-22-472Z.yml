@@ -1,0 +1,58 @@
+- generic [active] [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - button "跳至内容" [ref=f4e4] [cursor=pointer]
+    - button "辅助功能反馈" [ref=f4e7] [cursor=pointer]
+    - generic [ref=f4e10]:
+      - link [ref=f4e11] [cursor=pointer]:
+        - /url: /?FORM=Z9FD1
+        - heading "返回到必应搜索" [level=1] [ref=f4e12]
+      - search [ref=f4e13]:
+        - button "搜索" [ref=f4e16] [cursor=pointer]
+        - searchbox "在此处输入你的搜索 — 输入时会显示搜索建议" [ref=f4e17]: 深圳明天天气预报
+    - complementary "帐户奖励和偏好设置" [ref=f4e18]:
+      - button "Microsoft Rewards"
+      - link "登录" [ref=f4e19] [cursor=pointer]:
+        - /url: javascript:void(0)
+    - generic:
+      - generic "国内版" [ref=f4e21]
+      - generic "国际版" [ref=f4e22] [cursor=pointer]
+    - navigation "主菜单" [ref=f4e23]:
+      - list [ref=f4e24]:
+        - listitem [ref=f4e25]:
+          - link "网页" [ref=f4e26] [cursor=pointer]:
+            - /url: /?scope=web&FORM=HDRSC1
+        - listitem [ref=f4e27]:
+          - link "图片" [ref=f4e28] [cursor=pointer]:
+            - /url: /images/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC2
+        - listitem [ref=f4e29]:
+          - link "视频" [ref=f4e30] [cursor=pointer]:
+            - /url: /videos/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC3
+        - listitem [ref=f4e31]:
+          - link "学术" [ref=f4e32] [cursor=pointer]:
+            - /url: /academic/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC4
+        - listitem [ref=f4e33]:
+          - link "词典" [ref=f4e34] [cursor=pointer]:
+            - /url: /dict/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC6
+        - listitem [ref=f4e35]:
+          - link "地图" [ref=f4e36] [cursor=pointer]:
+            - /url: /maps?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC7
+        - listitem [ref=f4e37]:
+          - link "航班" [ref=f4e38] [cursor=pointer]:
+            - /url: /travel/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&m=flights&FORM=FBSCOP
+  - contentinfo [ref=f4e39]:
+    - list [ref=f4e41]:
+      - listitem [ref=f4e42]:
+        - link "增值电信业务经营许可证：合字B2-20090007" [ref=f4e43] [cursor=pointer]:
+          - /url: https://dxzhgl.miit.gov.cn/dxxzsp/xkz/xkzgl/resource/qiyereport.jsp?num=caf04fa4-bd8a-4d9e-80b6-2aa1b86c1509&type=yreport
+      - listitem [ref=f4e44]:
+        - link "京ICP备10036305号-7" [ref=f4e45] [cursor=pointer]:
+          - /url: https://beian.miit.gov.cn
+      - listitem [ref=f4e46]:
+        - link "京公网安备11010802047360号" [ref=f4e47] [cursor=pointer]:
+          - /url: https://beian.mps.gov.cn/#/query/webSearch?code=11010802047360
+      - listitem [ref=f4e48]:
+        - link "隐私" [ref=f4e49] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkId=521839
+      - listitem [ref=f4e50]:
+        - link "条款" [ref=f4e51] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkID=246338

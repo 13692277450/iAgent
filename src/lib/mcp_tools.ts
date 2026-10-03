@@ -62,7 +62,9 @@ async function callMcpServer(
         body: JSON.stringify({ tool: toolName, arguments: args }),
       });
       if (!res.ok) {
-        throw new Error(`MCP ${srv.name} HTTP ${res.status}: ${await res.text()}`);
+        throw new Error(
+          `MCP ${srv.name} HTTP ${res.status}: ${await res.text()}`,
+        );
       }
       return res.json();
     }
@@ -74,7 +76,7 @@ async function callMcpServer(
         cwd,
         env: { ...process.env, ...env },
         stdio: ["pipe", "pipe", "pipe"],
-        shell: true
+        shell: true,
       });
 
       return await new Promise((resolve, reject) => {

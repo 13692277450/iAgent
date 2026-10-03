@@ -1,0 +1,218 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - button "跳至内容" [ref=f2e4] [cursor=pointer]
+    - button "辅助功能反馈" [ref=f2e7] [cursor=pointer]
+    - generic [ref=f2e10]:
+      - link [ref=f2e11] [cursor=pointer]:
+        - /url: /?FORM=Z9FD1
+        - heading "返回到必应搜索" [level=1] [ref=f2e12]
+      - search [ref=f2e13]:
+        - button "搜索" [ref=f2e16] [cursor=pointer]
+        - searchbox "在此处输入你的搜索 — 输入时会显示搜索建议" [ref=f2e17]: 明天深圳天气
+        - status [ref=f2e69]
+    - complementary "帐户奖励和偏好设置" [ref=f2e18]:
+      - button "Microsoft Rewards" [ref=f2e19] [cursor=pointer]:
+        - generic [ref=f2e20]: Rewards
+      - link "登录" [ref=f2e36] [cursor=pointer]:
+        - /url: javascript:void(0)
+    - generic:
+      - generic "国内版" [ref=f2e38]
+      - generic "国际版" [ref=f2e39] [cursor=pointer]
+    - navigation "主菜单" [ref=f2e40]:
+      - list [ref=f2e41]:
+        - listitem [ref=f2e42]:
+          - link "网页" [ref=f2e43] [cursor=pointer]:
+            - /url: /?scope=web&FORM=HDRSC1
+        - listitem [ref=f2e44]:
+          - link "图片" [ref=f2e45] [cursor=pointer]:
+            - /url: /images/search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&FORM=HDRSC2
+        - listitem [ref=f2e46]:
+          - link "视频" [ref=f2e47] [cursor=pointer]:
+            - /url: /videos/search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&FORM=HDRSC3
+        - listitem [ref=f2e48]:
+          - link "学术" [ref=f2e49] [cursor=pointer]:
+            - /url: /academic/search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&FORM=HDRSC4
+        - listitem [ref=f2e50]:
+          - link "词典" [ref=f2e51] [cursor=pointer]:
+            - /url: /dict/search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&FORM=HDRSC6
+        - listitem [ref=f2e52]:
+          - link "地图" [ref=f2e53] [cursor=pointer]:
+            - /url: /maps?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&FORM=HDRSC7
+        - listitem [ref=f2e54]:
+          - link "航班" [ref=f2e55] [cursor=pointer]:
+            - /url: /travel/search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&m=flights&FORM=FBSCOP
+  - generic [ref=f2e85]:
+    - main "搜索结果" [ref=f2e86]:
+      - generic [ref=f2e87]: 约 247,000 个结果
+      - list [ref=f2e89]:
+        - listitem [ref=f2e90]:
+          - link "baidu.com" [ref=f2e92] [cursor=pointer]:
+            - /url: https://baike.baidu.com/item/%E6%98%8E%E5%A4%A9/3537957
+            - img "全球 Web 图标" [ref=f2e96]
+            - generic [ref=f2e97]:
+              - generic [ref=f2e98]: baidu.com
+              - generic [ref=f2e99]: https://baike.baidu.com › item › 明天
+          - heading [level=2] [ref=f2e102]:
+            - link [ref=f2e103] [cursor=pointer]:
+              - /url: https://baike.baidu.com/item/%E6%98%8E%E5%A4%A9/3537957
+              - strong [ref=f2e104]: 明天
+              - text: （鲁迅创作的白话短篇小说）_百度百科
+          - paragraph [ref=f2e106]: 《明天》是鲁迅于1919年创作的白话短篇小说，同年10月发表于《新潮》2卷1号，后收录于小说集《呐喊》。 《明天》这篇短篇小说 …
+        - listitem [ref=f2e107]:
+          - link "kekeshici.com" [ref=f2e109] [cursor=pointer]:
+            - /url: https://www.kekeshici.com/shicizhoubian/mingrenzuopin/luxun/35318.html
+            - img "全球 Web 图标" [ref=f2e113]
+            - generic [ref=f2e114]:
+              - generic [ref=f2e115]: kekeshici.com
+              - generic [ref=f2e116]: https://www.kekeshici.com › shicizhoubian › mingrenzuopin › ...
+          - heading [level=2] [ref=f2e119]:
+            - link [ref=f2e120] [cursor=pointer]:
+              - /url: https://www.kekeshici.com/shicizhoubian/mingrenzuopin/luxun/35318.html
+              - text: 鲁迅《
+              - strong [ref=f2e121]: 明天
+              - text: 》全文 - 可可诗词网
+          - paragraph [ref=f2e123]: 2018年11月22日 · 但宝儿也许是日轻夜重，到了明天，太阳一出，热也会退，气喘也会平的：这实在是病人常有的事。 单四嫂子是一 …
+        - listitem [ref=f2e124]:
+          - link "baidu.com" [ref=f2e126] [cursor=pointer]:
+            - /url: https://baike.baidu.com/item/%E6%98%8E%E5%A4%A9/3747
+            - img "全球 Web 图标" [ref=f2e130]
+            - generic [ref=f2e131]:
+              - generic [ref=f2e132]: baidu.com
+              - generic [ref=f2e133]: https://baike.baidu.com › item › 明天
+          - heading [level=2] [ref=f2e136]:
+            - link [ref=f2e137] [cursor=pointer]:
+              - /url: https://baike.baidu.com/item/%E6%98%8E%E5%A4%A9/3747
+              - strong [ref=f2e138]: 明天
+              - text: （汉语词语）_百度百科
+          - paragraph [ref=f2e140]: 1.指月光满天。 唐·元稹《和乐天别弟后月夜作》：“闻君别爱弟，明天照夜寒。 ” 2.今天的下一天。 鲁迅 《呐喊 · 端午节》：“叫小厮 …
+        - listitem [ref=f2e141]:
+          - link "qq.com" [ref=f2e143] [cursor=pointer]:
+            - /url: https://y.qq.com/n/ryqq/mv/0019vBpk0zYOM1
+            - img "全球 Web 图标" [ref=f2e147]
+            - generic [ref=f2e148]:
+              - generic [ref=f2e149]: qq.com
+              - generic [ref=f2e150]: https://y.qq.com › ryqq › mv
+          - heading [level=2] [ref=f2e153]:
+            - link [ref=f2e154] [cursor=pointer]:
+              - /url: https://y.qq.com/n/ryqq/mv/0019vBpk0zYOM1
+              - text: 马思唯-
+              - strong [ref=f2e155]: 明天
+              - text: （feat.袁娅维TIA RAY）-高清MV在线看-QQ音乐 ...
+          - paragraph [ref=f2e157]: 马思唯《明天（feat.袁娅维TIA RAY）》MV在线看！马思唯 海量高清MV在线看，尽在千万正版高品质音乐平台——QQ音乐！
+        - listitem [ref=f2e158]:
+          - link "zhihu.com" [ref=f2e160] [cursor=pointer]:
+            - /url: https://zhuanlan.zhihu.com/p/413413623
+            - img "全球 Web 图标" [ref=f2e164]
+            - generic [ref=f2e165]:
+              - generic [ref=f2e166]: zhihu.com
+              - generic [ref=f2e167]: https://zhuanlan.zhihu.com
+          - heading [level=2] [ref=f2e170]:
+            - link [ref=f2e171] [cursor=pointer]:
+              - /url: https://zhuanlan.zhihu.com/p/413413623
+              - text: 解读鲁迅《
+              - strong [ref=f2e172]: 明天
+              - text: 》：悲悯中的呐喊 - 知乎
+          - paragraph [ref=f2e174]: 2021年9月24日 · 《明天》的故事很简单，时间线很短，涉及的人物不多。 主要讲单四嫂子的三岁儿子从重病到去世几天中周围的人与 …
+        - listitem [ref=f2e175]:
+          - link "tianqi.com" [ref=f2e177] [cursor=pointer]:
+            - /url: https://www.tianqi.com/kechengqu/
+            - img "全球 Web 图标" [ref=f2e181]
+            - generic [ref=f2e182]:
+              - generic [ref=f2e183]: tianqi.com
+              - generic [ref=f2e184]: https://www.tianqi.com › kechengqu
+          - heading [level=2] [ref=f2e187]:
+            - link "【衢州柯城区天气预报】柯城天气预报一周,柯城天气预报15 ..." [ref=f2e188] [cursor=pointer]:
+              - /url: https://www.tianqi.com/kechengqu/
+          - paragraph [ref=f2e190]: 5 天之前 · 天气网提供柯城天气预报15天,30天,今日天气,明天天气,柯城未来一周的天气预报,衢州柯城区天气,柯城实时天气查询,柯城天 …
+        - listitem [ref=f2e191]:
+          - link "zhihu.com" [ref=f2e193] [cursor=pointer]:
+            - /url: https://www.zhihu.com/question/62146236
+            - img "全球 Web 图标" [ref=f2e197]
+            - generic [ref=f2e198]:
+              - generic [ref=f2e199]: zhihu.com
+              - generic [ref=f2e200]: https://www.zhihu.com › question
+          - heading [level=2] [ref=f2e203]:
+            - link [ref=f2e204] [cursor=pointer]:
+              - /url: https://www.zhihu.com/question/62146236
+              - text: 鲁迅先生《
+              - strong [ref=f2e205]: 明天
+              - text: 》解读？ - 知乎
+          - paragraph [ref=f2e207]: 我们不禁反问，在那样一个冷漠的社会里，明天的希望究竟在哪里？ 《明天》是鲁迅先生在1920年创作的一篇短篇小说，讲述了单四 …
+        - listitem [ref=f2e208]:
+          - link "tthuangli.com" [ref=f2e210] [cursor=pointer]:
+            - /url: https://www.tthuangli.com/tomorrow/
+            - img "全球 Web 图标" [ref=f2e214]
+            - generic [ref=f2e215]:
+              - generic [ref=f2e216]: tthuangli.com
+              - generic [ref=f2e217]: https://www.tthuangli.com › tomorrow
+          - heading [level=2] [ref=f2e220]:
+            - link "明日黄历吉凶宜忌_吉日吉时_财神方位查询-天天黄历" [ref=f2e221] [cursor=pointer]:
+              - /url: https://www.tthuangli.com/tomorrow/
+          - paragraph [ref=f2e223]: 2026年10月4日 · 明天老黄历是什么日子？ 明天老黄历是 世界空间周、世界动物日。 老黄历明天是不是黄道吉日？ 老黄历明天值神是 …
+        - listitem [ref=f2e224]:
+          - link "zhihu.com" [ref=f2e226] [cursor=pointer]:
+            - /url: https://www.zhihu.com/tardis/bd/ans/959041685
+            - img "全球 Web 图标" [ref=f2e230]
+            - generic [ref=f2e231]:
+              - generic [ref=f2e232]: zhihu.com
+              - generic [ref=f2e233]: https://www.zhihu.com › tardis › bd › ans
+          - heading [level=2] [ref=f2e236]:
+            - link [ref=f2e237] [cursor=pointer]:
+              - /url: https://www.zhihu.com/tardis/bd/ans/959041685
+              - text: 鲁迅先生《
+              - strong [ref=f2e238]: 明天
+              - text: 》解读？
+          - paragraph [ref=f2e240]: 2021年11月25日 · 我们不禁反问，在那样一个冷漠的社会里，明天的希望究竟在哪里？ 《明天》是鲁迅先生在1920年创作的一篇短篇 …
+        - listitem [ref=f2e241]:
+          - link "weather.com.cn" [ref=f2e243] [cursor=pointer]:
+            - /url: https://www.weather.com.cn/weather/101211007.shtml
+            - img "全球 Web 图标" [ref=f2e247]
+            - generic [ref=f2e248]:
+              - generic [ref=f2e249]: weather.com.cn
+              - generic [ref=f2e250]: https://www.weather.com.cn › weather
+          - heading [level=2] [ref=f2e253]:
+            - link "柯城天气预报,柯城7天天气预报,柯城15天天气预报,柯城天气查询" [ref=f2e254] [cursor=pointer]:
+              - /url: https://www.weather.com.cn/weather/101211007.shtml
+          - paragraph [ref=f2e256]: 15 小时之前 · 明天起华西降雨将增强并东扩 北方继续升温南方闷热持续 今天（9月22日），华西降雨将有所减弱，但明天起会再度增 …
+        - listitem [ref=f2e257]:
+          - text: 为回应符合本地法律要求的通知，部分搜索结果未予显示。有关详细信息，请参阅
+          - link "此处" [ref=f2e258] [cursor=pointer]:
+            - /url: http://go.microsoft.com/fwlink/?LinkID=617350
+          - text: 。
+        - listitem [ref=f2e259]:
+          - navigation "明天深圳天气 的更多搜索结果":
+            - list:
+              - listitem [ref=f2e260]:
+                - generic "第 1 页" [ref=f2e261]: "1"
+              - listitem [ref=f2e262]:
+                - link "第 2 页" [ref=f2e263] [cursor=pointer]:
+                  - /url: /search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&rdr=1&rdrig=C8FE622646CB4023AA3B109DBBB8F784&FPIG=47E99FCF70C749CCB6CC63580A52CDAE&first=11&FORM=PERE
+                  - text: "2"
+              - listitem [ref=f2e264]:
+                - link "第 3 页" [ref=f2e265] [cursor=pointer]:
+                  - /url: /search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&rdr=1&rdrig=C8FE622646CB4023AA3B109DBBB8F784&FPIG=47E99FCF70C749CCB6CC63580A52CDAE&first=21&FORM=PERE1
+                  - text: "3"
+              - listitem [ref=f2e266]:
+                - link "下一页" [ref=f2e267] [cursor=pointer]:
+                  - /url: /search?q=%e6%98%8e%e5%a4%a9%e6%b7%b1%e5%9c%b3%e5%a4%a9%e6%b0%94&rdr=1&rdrig=C8FE622646CB4023AA3B109DBBB8F784&FPIG=47E99FCF70C749CCB6CC63580A52CDAE&first=11&FORM=PORE
+    - complementary "更多结果" [ref=f2e268]:
+      - list
+    - complementary "浏览更多"
+  - contentinfo [ref=f2e56]:
+    - list [ref=f2e58]:
+      - listitem [ref=f2e59]:
+        - link "增值电信业务经营许可证：合字B2-20090007" [ref=f2e60] [cursor=pointer]:
+          - /url: https://dxzhgl.miit.gov.cn/dxxzsp/xkz/xkzgl/resource/qiyereport.jsp?num=caf04fa4-bd8a-4d9e-80b6-2aa1b86c1509&type=yreport
+      - listitem [ref=f2e61]:
+        - link "京ICP备10036305号-7" [ref=f2e62] [cursor=pointer]:
+          - /url: https://beian.miit.gov.cn
+      - listitem [ref=f2e63]:
+        - link "京公网安备11010802047360号" [ref=f2e64] [cursor=pointer]:
+          - /url: https://beian.mps.gov.cn/#/query/webSearch?code=11010802047360
+      - listitem [ref=f2e65]:
+        - link "隐私" [ref=f2e66] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkId=521839
+      - listitem [ref=f2e67]:
+        - link "条款" [ref=f2e68] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkID=246338
+  - dialog "Quick Search"

@@ -1,0 +1,272 @@
+- generic [active] [ref=f6e1]:
+  - banner [ref=f6e2]:
+    - button "跳至内容" [ref=f6e4] [cursor=pointer]
+    - button "辅助功能反馈" [ref=f6e7] [cursor=pointer]
+    - generic [ref=f6e10]:
+      - link [ref=f6e11] [cursor=pointer]:
+        - /url: /?FORM=Z9FD1
+        - heading "返回到必应搜索" [level=1] [ref=f6e12]
+      - search [ref=f6e13]:
+        - button "搜索" [ref=f6e16] [cursor=pointer]
+        - searchbox "在此处输入你的搜索 — 输入时会显示搜索建议" [ref=f6e17]: 深圳明天天气预报
+        - status [ref=f6e18]
+    - complementary "帐户奖励和偏好设置" [ref=f6e19]:
+      - button "Microsoft Rewards" [ref=f6e20] [cursor=pointer]:
+        - generic [ref=f6e21]: Rewards
+      - link "登录" [ref=f6e37] [cursor=pointer]:
+        - /url: javascript:void(0)
+    - generic:
+      - generic "国内版" [ref=f6e39]
+      - generic "国际版" [ref=f6e40] [cursor=pointer]
+    - navigation "主菜单" [ref=f6e41]:
+      - list [ref=f6e42]:
+        - listitem [ref=f6e43]:
+          - link "网页" [ref=f6e44] [cursor=pointer]:
+            - /url: /?scope=web&FORM=HDRSC1
+        - listitem [ref=f6e45]:
+          - link "图片" [ref=f6e46] [cursor=pointer]:
+            - /url: /images/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC2
+        - listitem [ref=f6e47]:
+          - link "视频" [ref=f6e48] [cursor=pointer]:
+            - /url: /videos/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC3
+        - listitem [ref=f6e49]:
+          - link "学术" [ref=f6e50] [cursor=pointer]:
+            - /url: /academic/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC4
+        - listitem [ref=f6e51]:
+          - link "词典" [ref=f6e52] [cursor=pointer]:
+            - /url: /dict/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC6
+        - listitem [ref=f6e53]:
+          - link "地图" [ref=f6e54] [cursor=pointer]:
+            - /url: /maps?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&FORM=HDRSC7
+        - listitem [ref=f6e55]:
+          - link "航班" [ref=f6e56] [cursor=pointer]:
+            - /url: /travel/search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&m=flights&FORM=FBSCOP
+  - generic [ref=f6e57]:
+    - main "搜索结果" [ref=f6e58]:
+      - generic [ref=f6e59]: 约 37,700 个结果
+      - list [ref=f6e61]:
+        - listitem [ref=f6e62]:
+          - link "weather.com.cn" [ref=f6e64] [cursor=pointer]:
+            - /url: https://www.weather.com.cn/weather/101280601.shtml
+            - img "全球 Web 图标" [ref=f6e68]
+            - generic [ref=f6e69]:
+              - generic [ref=f6e70]: weather.com.cn
+              - generic [ref=f6e71]: https://www.weather.com.cn › weather
+          - heading [level=2] [ref=f6e74]:
+            - link [ref=f6e75] [cursor=pointer]:
+              - /url: https://www.weather.com.cn/weather/101280601.shtml
+              - strong [ref=f6e76]: 深圳天气预报
+              - text: ","
+              - strong [ref=f6e77]: 深圳
+              - text: 7天
+              - strong [ref=f6e78]: 天气预报
+              - text: ","
+              - strong [ref=f6e79]: 深圳
+              - text: 15天
+              - strong [ref=f6e80]: 天气预报
+              - text: ","
+              - strong [ref=f6e81]: 深圳天气
+              - text: 查询
+          - paragraph [ref=f6e83]: 15 小时之前 · 深圳天气预报，及时准确发布中央气象台天气信息，便捷查询深圳今日天气，深圳周末天气，深圳一周天气预报，深圳 …
+        - listitem [ref=f6e84]:
+          - link "tianqi.com" [ref=f6e86] [cursor=pointer]:
+            - /url: https://www.tianqi.com/shenzhen
+            - img "全球 Web 图标" [ref=f6e90]
+            - generic [ref=f6e91]:
+              - generic [ref=f6e92]: tianqi.com
+              - generic [ref=f6e93]: https://www.tianqi.com › shenzhen
+          - heading [level=2] [ref=f6e96]:
+            - link [ref=f6e97] [cursor=pointer]:
+              - /url: https://www.tianqi.com/shenzhen
+              - text: 【
+              - strong [ref=f6e98]: 深圳天气预报
+              - text: 】
+              - strong [ref=f6e99]: 深圳天气预报
+              - text: 一周,
+              - strong [ref=f6e100]: 深圳天气预报
+              - text: 15天,30天 ...
+          - paragraph [ref=f6e102]: 15 小时之前 · 根据气象部门监测，今天白天北风三四级，阵风可达六七级，山区还可能出现短时阵雨。 受此影响，白天最高气温预 …
+        - listitem [ref=f6e103]:
+          - link "weather.com.cn" [ref=f6e105] [cursor=pointer]:
+            - /url: https://www.weather.com.cn/weathern/101280601.shtml
+            - img "全球 Web 图标" [ref=f6e109]
+            - generic [ref=f6e110]:
+              - generic [ref=f6e111]: weather.com.cn
+              - generic [ref=f6e112]: https://www.weather.com.cn › weathern
+          - heading [level=2] [ref=f6e115]:
+            - link [ref=f6e116] [cursor=pointer]:
+              - /url: https://www.weather.com.cn/weathern/101280601.shtml
+              - strong [ref=f6e117]: 深圳天气预报
+              - text: ","
+              - strong [ref=f6e118]: 深圳
+              - text: 7天
+              - strong [ref=f6e119]: 天气预报
+              - text: ","
+              - strong [ref=f6e120]: 深圳
+              - text: 15天
+              - strong [ref=f6e121]: 天气预报
+              - text: ","
+              - strong [ref=f6e122]: 深圳天气
+              - text: ...
+          - paragraph [ref=f6e124]: 15 小时之前 · 深圳天气预报，及时准确发布中央气象台天气信息，便捷查询北京今日天气，深圳周末天气，深圳一周天气预报，深 …
+        - listitem [ref=f6e125]:
+          - link "pizsalad.com" [ref=f6e127] [cursor=pointer]:
+            - /url: https://shenzhen.pizsalad.com/tomorrow.html
+            - img "全球 Web 图标" [ref=f6e131]
+            - generic [ref=f6e132]:
+              - generic [ref=f6e133]: pizsalad.com
+              - generic [ref=f6e134]: https://shenzhen.pizsalad.com › tomorrow.html
+          - heading [level=2] [ref=f6e137]:
+            - link [ref=f6e138] [cursor=pointer]:
+              - /url: https://shenzhen.pizsalad.com/tomorrow.html
+              - strong [ref=f6e139]: 深圳明天天气预报
+              - text: _
+              - strong [ref=f6e140]: 深圳明天
+              - text: 24小时逐小时
+              - strong [ref=f6e141]: 预报
+              - text: _
+              - strong [ref=f6e142]: 天气
+              - text: 详情_知 ...
+          - paragraph [ref=f6e144]: 15 小时之前 · 提供深圳明天24小时逐小时天气预报，帮助您提前了解明天天气变化。
+        - listitem [ref=f6e145]:
+          - link "weather-atlas.com" [ref=f6e147] [cursor=pointer]:
+            - /url: https://www.weather-atlas.com/zh/china/shenzhen-weather-tomorrow
+            - img "全球 Web 图标" [ref=f6e151]
+            - generic [ref=f6e152]:
+              - generic [ref=f6e153]: weather-atlas.com
+              - generic [ref=f6e154]: https://www.weather-atlas.com › zh › china › shenzhen-weather...
+          - heading [level=2] [ref=f6e157]:
+            - link [ref=f6e158] [cursor=pointer]:
+              - /url: https://www.weather-atlas.com/zh/china/shenzhen-weather-tomorrow
+              - strong [ref=f6e159]: 明天的天气预报 深圳
+              - text: 市, 中国 - Weather Atlas
+          - paragraph [ref=f6e161]: 深圳市, 中国 - 明天的详细天气预报。 明天的每小时预报 - 包括天气状况、温度、压力、湿度、降水、露点、风、能见度和紫外线指数 …
+        - listitem [ref=f6e162]:
+          - link "sz.gov.cn" [ref=f6e164] [cursor=pointer]:
+            - /url: https://weather.sz.gov.cn/
+            - img "全球 Web 图标" [ref=f6e168]
+            - generic [ref=f6e169]:
+              - generic [ref=f6e170]: sz.gov.cn
+              - generic [ref=f6e171]: https://weather.sz.gov.cn
+          - heading [level=2] [ref=f6e174]:
+            - link [ref=f6e175] [cursor=pointer]:
+              - /url: https://weather.sz.gov.cn/
+              - strong [ref=f6e176]: 深圳
+              - text: 市气象局（台）
+          - paragraph [ref=f6e178]: 2026年3月17日 · 深圳市气象局门户网站为您提供权威、及时、准确的深圳天气预警、天气预报、天气实况、台风路径、深圳气候等信 …
+        - listitem [ref=f6e179]:
+          - link "nmc.cn" [ref=f6e181] [cursor=pointer]:
+            - /url: https://nmc.cn/publish/forecast/AGD/shenzuo.html
+            - img "全球 Web 图标" [ref=f6e185]
+            - generic [ref=f6e186]:
+              - generic [ref=f6e187]: nmc.cn
+              - generic [ref=f6e188]: https://nmc.cn › publish › forecast › AGD › shenzuo.html
+          - heading [level=2] [ref=f6e191]:
+            - link [ref=f6e192] [cursor=pointer]:
+              - /url: https://nmc.cn/publish/forecast/AGD/shenzuo.html
+              - strong [ref=f6e193]: 深圳
+              - text: "-"
+              - strong [ref=f6e194]: 天气预报
+          - paragraph [ref=f6e196]: 15 小时之前 · 24小时预报 7天预报 10天预报 11-30天预报 发布时间：10-03 20:00 10/03 周六 25℃ 多云 无持续风向 微风 10/04 周日 …
+        - listitem [ref=f6e197]:
+          - link "bendibao.com" [ref=f6e199] [cursor=pointer]:
+            - /url: https://sz.bendibao.com/tianqi/tomorrow.shtm
+            - img "全球 Web 图标" [ref=f6e203]
+            - generic [ref=f6e204]:
+              - generic [ref=f6e205]: bendibao.com
+              - generic [ref=f6e206]: https://sz.bendibao.com › tianqi › tomorrow.shtm
+          - heading [level=2] [ref=f6e209]:
+            - link [ref=f6e210] [cursor=pointer]:
+              - /url: https://sz.bendibao.com/tianqi/tomorrow.shtm
+              - strong [ref=f6e211]: 深圳明天天气预报
+              - text: _
+              - strong [ref=f6e212]: 明天深圳天气预报
+              - text: 查询-
+              - strong [ref=f6e213]: 深圳
+              - text: 本地宝
+          - paragraph [ref=f6e215]: 15 小时之前 · 深圳明天天气预报 深圳天气预报由中央气象局2026-10-03 08:00发布 相关地区天气： 当前位置： 深圳本地宝 >> 深圳天 …
+        - listitem [ref=f6e216]:
+          - link "tianqi.com" [ref=f6e218] [cursor=pointer]:
+            - /url: https://www.tianqi.com/shenzhen/today/
+            - img "全球 Web 图标" [ref=f6e222]
+            - generic [ref=f6e223]:
+              - generic [ref=f6e224]: tianqi.com
+              - generic [ref=f6e225]: https://www.tianqi.com › shenzhen › today
+          - heading [level=2] [ref=f6e228]:
+            - link [ref=f6e229] [cursor=pointer]:
+              - /url: https://www.tianqi.com/shenzhen/today/
+              - text: 【
+              - strong [ref=f6e230]: 深圳
+              - text: 今天
+              - strong [ref=f6e231]: 天气预报
+              - text: 】
+              - strong [ref=f6e232]: 深圳天气预报
+              - text: 24小时详情_
+              - strong [ref=f6e233]: 深圳天气
+              - text: 网
+          - paragraph [ref=f6e235]: 2025年9月20日 · 深圳天气网为您提供深圳天气预报24小时详情、深圳今日天气预报，包括今日实时温度、24小时降水概率、湿度 …
+        - listitem [ref=f6e236]:
+          - link "eastday.com" [ref=f6e238] [cursor=pointer]:
+            - /url: https://tianqi.eastday.com/shenzhen/7/
+            - img "全球 Web 图标" [ref=f6e242]
+            - generic [ref=f6e243]:
+              - generic [ref=f6e244]: eastday.com
+              - generic [ref=f6e245]: https://tianqi.eastday.com › shenzhen
+          - heading [level=2] [ref=f6e248]:
+            - link [ref=f6e249] [cursor=pointer]:
+              - /url: https://tianqi.eastday.com/shenzhen/7/
+              - strong [ref=f6e250]: 深圳
+              - text: 一周
+              - strong [ref=f6e251]: 天气预报
+              - text: ","
+              - strong [ref=f6e252]: 深圳天气预报
+              - text: 一周,
+              - strong [ref=f6e253]: 深圳
+              - text: 未来一周
+              - strong [ref=f6e254]: 天气
+              - text: ","
+              - strong [ref=f6e255]: 深圳
+              - text: 7 ...
+          - paragraph [ref=f6e257]: 1 天前 · 东方天气为您提供深圳一周天气预报查询，深圳未来一周天气，深圳天气预报一周，深圳7天天气查询，及时了解深圳天气预 …
+        - listitem [ref=f6e258]:
+          - text: 为回应符合本地法律要求的通知，部分搜索结果未予显示。有关详细信息，请参阅
+          - link "此处" [ref=f6e259] [cursor=pointer]:
+            - /url: http://go.microsoft.com/fwlink/?LinkID=617350
+          - text: 。
+        - listitem [ref=f6e260]:
+          - navigation "深圳明天天气预报 的更多搜索结果":
+            - list:
+              - listitem [ref=f6e261]:
+                - generic "第 1 页" [ref=f6e262]: "1"
+              - listitem [ref=f6e263]:
+                - link "第 2 页" [ref=f6e264] [cursor=pointer]:
+                  - /url: /search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&mkt=zh-CN&rdr=1&rdrig=6AF445D1D4624D23A3484D4A1235E36D&FPIG=426376ECADA841D8BE24BDB45AE9A9F8&first=11&FORM=PERE
+                  - text: "2"
+              - listitem [ref=f6e265]:
+                - link "第 3 页" [ref=f6e266] [cursor=pointer]:
+                  - /url: /search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&mkt=zh-CN&rdr=1&rdrig=6AF445D1D4624D23A3484D4A1235E36D&FPIG=426376ECADA841D8BE24BDB45AE9A9F8&first=21&FORM=PERE1
+                  - text: "3"
+              - listitem [ref=f6e267]:
+                - link "下一页" [ref=f6e268] [cursor=pointer]:
+                  - /url: /search?q=%e6%b7%b1%e5%9c%b3%e6%98%8e%e5%a4%a9%e5%a4%a9%e6%b0%94%e9%a2%84%e6%8a%a5&mkt=zh-CN&rdr=1&rdrig=6AF445D1D4624D23A3484D4A1235E36D&FPIG=426376ECADA841D8BE24BDB45AE9A9F8&first=11&FORM=PORE
+    - complementary "更多结果" [ref=f6e269]:
+      - list
+    - complementary "浏览更多"
+  - contentinfo [ref=f6e270]:
+    - list [ref=f6e272]:
+      - listitem [ref=f6e273]:
+        - link "增值电信业务经营许可证：合字B2-20090007" [ref=f6e274] [cursor=pointer]:
+          - /url: https://dxzhgl.miit.gov.cn/dxxzsp/xkz/xkzgl/resource/qiyereport.jsp?num=caf04fa4-bd8a-4d9e-80b6-2aa1b86c1509&type=yreport
+      - listitem [ref=f6e275]:
+        - link "京ICP备10036305号-7" [ref=f6e276] [cursor=pointer]:
+          - /url: https://beian.miit.gov.cn
+      - listitem [ref=f6e277]:
+        - link "京公网安备11010802047360号" [ref=f6e278] [cursor=pointer]:
+          - /url: https://beian.mps.gov.cn/#/query/webSearch?code=11010802047360
+      - listitem [ref=f6e279]:
+        - link "隐私" [ref=f6e280] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkId=521839
+      - listitem [ref=f6e281]:
+        - link "条款" [ref=f6e282] [cursor=pointer]:
+          - /url: http://go.microsoft.com/fwlink/?LinkID=246338
+  - dialog "Quick Search"

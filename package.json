@@ -18,6 +18,7 @@
     "@assistant-ui/react-ai-sdk": "^1.4.12",
     "@assistant-ui/react-markdown": "^0.14.16",
     "@base-ui/react": "^1.8.0",
+    "@playwright/mcp": "^0.0.83",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",

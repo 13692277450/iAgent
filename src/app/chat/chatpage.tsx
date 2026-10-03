@@ -635,7 +635,14 @@ function ChatInner({
                   onClick={() => {
                     const next = !enableSearch;
                     setEnableSearch(next);
-                    log(`[SEARCH] Search Internet Set: ${next}`);
+                    // log(`[SEARCH] Search Internet Set: ${next}`);
+                    styledLog(
+                      `[SEARCH] Search Set: ${next}`,
+                      next
+                        ? "color: #22d3ee; font-weight: bold"
+                        : "color: #9F9207",
+                      next ? "info" : "log",
+                    );
                   }}
                   title={
                     enableSearch ? t("chat.internetOn") : t("chat.internetOff")
